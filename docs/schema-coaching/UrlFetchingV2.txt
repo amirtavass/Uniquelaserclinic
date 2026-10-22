@@ -1,0 +1,439 @@
+# Project Brief: Unique Laser Clinics — Mobile Application Discovery, Brand Analysis & Product Specification
+
+## 1. Objective
+
+We are planning to build a **mobile application for Unique Laser Clinics**, a laser and aesthetics clinic based in Bolton, UK.
+
+The existing website is:
+
+https://uniquelaserclinics.co.uk/
+
+Your task is to analyse the existing website thoroughly and transform the findings into a reliable product specification for a mobile application.
+
+The goal is not simply to recreate the website in a smaller viewport. We want to understand the business, its services, its brand identity, its customer journey, and its operational requirements, then design a mobile-first experience that improves how customers discover treatments, request consultations, manage appointments, and engage with the clinic.
+
+Use the existing website as the primary source of truth for published business information. Clearly distinguish verified facts from assumptions, recommendations, and proposed functionality.
+
+## 2. Review the Previous Website Extraction
+
+An earlier agent produced a report covering:
+
+- Business overview, positioning, and contact information.
+- Treatment categories and starting prices.
+- Customer and staff user stories.
+- Suggested TypeScript data models.
+- Website navigation and component structure.
+- A proposed colour palette and typography.
+- Homepage and booking interactions.
+
+Use that report as an initial research document, not as unquestionable ground truth.
+
+Preserve useful findings, but revisit the website to verify important details. Do not blindly reproduce the original report's assumptions.
+
+### Findings that require special attention
+
+**A. Opening hours inconsistency**
+
+The previous report identified conflicting opening times: some areas of the website reportedly state 9am–6pm, while the announcement bar states 10am–6pm.
+
+Investigate the discrepancy. Record what each relevant page or section says and flag the final business hours as requiring confirmation from the clinic. Do not arbitrarily choose one value.
+
+**B. Treatment count inconsistency**
+
+The original report claims there are 31 treatments, but its category counts total 32:
+
+- Laser: 5
+- Skin: 10
+- Anti-Ageing / Firming: 7
+- Body Contouring: 6
+- Wellness: 4
+
+The report also describes 23 additional treatments beyond eight featured treatments, which would imply 31 in total. These figures need reconciliation.
+
+Visit the actual treatment directory and booking interface. Produce a deduplicated inventory of treatments, their exact published names, categories, prices, and relevant page URLs. Explain whether different names refer to the same treatment and whether any treatments are missing from the earlier report.
+
+**C. Visual design assumptions**
+
+The earlier report suggested colours such as `#FAF8F5`, `#F3EFEA`, `#18181B`, `#0F766E`, and `#9A6B56`, alongside possible fonts such as Playfair Display, Cormorant Garamond, Inter, and DM Sans.
+
+These were proposed design interpretations, not confirmed brand tokens.
+
+Inspect the actual website's rendered CSS and assets to identify:
+
+- Exact colours used in key components.
+- Actual heading and body fonts.
+- Logo variants and brand assets.
+- Button styles, borders, shadows, and corner radii.
+- Backgrounds, gradients, and image treatments.
+- Typography hierarchy, spacing, and layout conventions.
+
+Use browser inspection, computed CSS, loaded stylesheets, and network assets where available. Record the exact source of each finding. If a value cannot be verified, label it as an estimate rather than presenting it as fact.
+
+**D. Booking workflow**
+
+The earlier report describes a quick-booking widget, a seven-day date selector, an interactive calendar, health-screening fields, and a receptionist confirmation workflow.
+
+Inspect the actual functioning interface to establish which features currently exist, which require interaction to reveal, and which are merely proposed. Determine whether appointment slots are genuinely available in real time or whether customers only submit preferred dates for subsequent confirmation.
+
+Do not invent backend capabilities.
+
+## 3. Business and Brand Analysis
+
+Analyse the website and document the following.
+
+### Business identity
+
+- Business name and tagline.
+- Location, contact channels, and service area.
+- Main value proposition.
+- Target customers and their likely needs.
+- Brand personality and tone of voice.
+- Differentiators and trust signals.
+- Published safety, consultation, and patch-test information.
+
+### Treatment catalogue
+
+For every verified treatment, capture:
+
+- Unique identifier and published name.
+- Category and any secondary category.
+- Exact description or a faithful summary.
+- Published starting price, if available.
+- Pricing model: fixed price, starting price, consultation-based, or free.
+- Published treatment duration and recommended course, if stated.
+- Published suitability information and contraindications, where available.
+- Source URL.
+- Whether the information has been verified.
+
+Do not invent prices, treatment outcomes, medical claims, session counts, or suitability advice. Preserve appropriate qualifications and disclaimers from the source.
+
+### Customer journey
+
+Map the existing journey from initial discovery through:
+
+1. Finding a treatment.
+2. Understanding suitability, cost, and expected treatment process.
+3. Asking for advice or booking a consultation.
+4. Attending the consultation.
+5. Completing the required patch test.
+6. Attending treatment sessions.
+7. Receiving aftercare information.
+8. Returning for further sessions or follow-up.
+
+Identify pain points and opportunities for a better mobile experience.
+
+## 4. Extract the Actual Visual Design System
+
+Produce a brand reference suitable for implementation in a mobile application.
+
+Inspect the website rather than guessing from its general appearance.
+
+Document:
+
+- Logo assets and appropriate usage.
+- Primary, secondary, background, text, border, and status colours.
+- Hexadecimal colour values and where each appears.
+- Heading, body, label, and button fonts.
+- Font weights and approximate size hierarchy.
+- Button variants and interaction states.
+- Card styles, spacing, corner radii, borders, and shadows.
+- Icon styles and imagery.
+- Desktop and mobile layout differences.
+- Any existing responsive navigation patterns.
+
+If the original design uses inconsistent styles, document them and recommend a coherent mobile design system that retains the brand identity.
+
+Create a proposed token file, for example:
+
+```text
+colors
+typography
+spacing
+radius
+shadows
+buttons
+cards
+inputs
+navigation
+```
+
+Provide actual CSS or TypeScript token values only when supported by inspection. Mark proposed adjustments separately from extracted values.
+
+## 5. Proposed Mobile Application Structure
+
+Develop a mobile-first information architecture. Treat the following as a starting proposal to refine after examining the business and its existing workflows.
+
+### A. Home
+
+Purpose: Help users understand the clinic and take the next appropriate action quickly.
+
+Potential components:
+
+- Clinic logo and streamlined navigation.
+- Hero message communicating the clinic's value proposition.
+- Primary action: Book a free consultation.
+- Secondary action: Explore treatments.
+- Clinic contact details and verified opening status.
+- Featured treatments with accurate starting prices.
+- Trust signals and differentiators.
+- A concise explanation of consultation and patch-test requirements.
+- Testimonials only where genuine, verifiable testimonials are available.
+- Convenient access to directions and contact options.
+
+Avoid overwhelming users with the full desktop website's navigation.
+
+### B. Explore Treatments
+
+Purpose: Help customers find treatments relevant to their needs.
+
+Potential features:
+
+- Search by treatment name or concern.
+- Category filters.
+- Featured treatment cards.
+- Starting prices and consultation-based pricing labels.
+- Clear treatment summaries.
+- Filters for concerns such as unwanted hair, acne, pigmentation, tattoos, and ageing, where supported by the actual catalogue.
+- A useful empty state when no results match.
+
+### C. Treatment Details
+
+Each treatment should have a dedicated mobile detail screen containing relevant verified information:
+
+- Treatment name and category.
+- Description and intended purpose.
+- Price or pricing explanation.
+- Published duration and course guidance.
+- Suitability information and relevant cautions.
+- Consultation and patch-test requirements.
+- Frequently asked questions, where relevant.
+- Primary action to request a consultation.
+- Related treatments where helpful.
+
+Do not present the app as diagnosing conditions or independently determining medical suitability.
+
+### D. Consultation and Booking
+
+Design a simple, mobile-friendly consultation request flow.
+
+Potential steps:
+
+1. Select a treatment or choose "I'm not sure — advise me."
+2. Choose a preferred date and, if supported, a preferred time.
+3. Enter name, email, and phone number.
+4. Review the request and relevant privacy information.
+5. Submit and receive a clear acknowledgement.
+6. Explain what happens next and how the clinic will confirm the appointment.
+
+First verify the current booking workflow. If the clinic manually confirms requests, preserve that workflow instead of displaying fictitious real-time availability or guaranteed appointments.
+
+Consider a calendar integration only if the clinic's actual scheduling system supports it.
+
+### E. My Appointments
+
+Evaluate whether the application should support:
+
+- Upcoming appointments.
+- Appointment details and status.
+- Reminders and notifications.
+- Cancellation or rescheduling requests.
+- Past appointments.
+- Consultation instructions and aftercare guidance.
+
+These are proposed features, not confirmed website capabilities. Determine whether customer accounts are necessary or whether a simpler booking-reference flow would better suit the business.
+
+### F. Aftercare and Treatment Progress
+
+Explore features that could add value beyond the existing website:
+
+- Treatment-specific aftercare instructions approved by the clinic.
+- Reminders for future sessions.
+- Follow-up prompts.
+- Optional treatment progress records.
+- Before-and-after photographs, only with appropriate consent and secure storage.
+
+Prioritise features that genuinely improve the customer experience. Do not assume that every feature needs to be included in the first release.
+
+### G. Profile, Contact, and Clinic Information
+
+Potential features:
+
+- Customer details and preferences.
+- Privacy and notification settings.
+- Clinic location and directions.
+- Phone, email, and social links.
+- FAQs.
+- Privacy policy and terms.
+- Data access and deletion requests.
+
+Recommend a simple navigation structure suitable for one-handed mobile use.
+
+## 6. Recommended Initial Navigation
+
+Evaluate this proposed bottom navigation:
+
+- **Home**
+- **Treatments**
+- **Book**
+- **Appointments**
+- **Profile**
+
+Explain whether this structure makes sense for the business and target users.
+
+If appointment history and customer accounts are not needed for the initial release, recommend a leaner navigation rather than introducing unnecessary complexity.
+
+Keep the consultation action prominent throughout the app, but do not let persistent buttons obscure content or interfere with accessibility.
+
+## 7. Staff and Administrative Requirements
+
+A customer-facing application may require supporting clinic workflows.
+
+Investigate the minimum backend and administrative functionality needed to support:
+
+- Receiving consultation requests.
+- Viewing treatment preferences and preferred dates.
+- Confirming, declining, or rescheduling requests.
+- Contacting customers.
+- Managing the treatment catalogue and published prices.
+- Updating clinic opening hours.
+- Sending appropriate booking notifications.
+- Managing approved aftercare content.
+- Recording request status and an audit trail where necessary.
+
+Separate the customer-facing mobile app from any staff dashboard or administrative system.
+
+Recommend whether the first release can integrate with an existing booking platform, use a lightweight administrative interface, or requires a new backend. Do not assume access to an existing API.
+
+## 8. Privacy, Security, and Healthcare Considerations
+
+The earlier report proposed collecting medical conditions, medications, and pregnancy or breastfeeding information.
+
+Treat this as a sensitive design decision, not a default requirement.
+
+Assess:
+
+- Whether the app genuinely needs to collect health information before a consultation.
+- Whether this information can instead be collected securely by clinic staff.
+- Data minimisation and retention.
+- Appropriate privacy notices and lawful processing.
+- Explicit consent where required.
+- Secure transmission, storage, and access controls.
+- Authentication and authorisation.
+- Protection of photographs and treatment records.
+- Notification privacy.
+- Deletion and data access workflows.
+- Relevant UK GDPR and Data Protection Act obligations.
+
+Do not assume a checkbox alone makes health-data processing compliant. Identify decisions that require the clinic's approval and, where appropriate, specialist legal or data-protection advice.
+
+Do not include sensitive health information in analytics events, URLs, ordinary logs, or push-notification previews.
+
+## 9. Technical Recommendations
+
+After discovery, recommend an appropriate mobile architecture.
+
+Consider:
+
+- React Native with Expo if suitable for the desired platforms and existing development skills.
+- iOS and Android requirements.
+- Navigation and state management.
+- API and backend requirements.
+- Data model and persistence.
+- Authentication, if needed.
+- Push notifications, if needed.
+- Integration with the clinic's scheduling or customer management system.
+- Accessibility and responsive layouts.
+- Testing, deployment, and app-store release requirements.
+
+Do not choose technologies simply because they are familiar. Explain the trade-offs and distinguish confirmed requirements from assumptions.
+
+Reuse the earlier TypeScript models only after validating the actual requirements. Ensure the treatment model can accommodate missing prices, changing prices, duplicated treatments, category differences, and content that requires review.
+
+## 10. Deliverables
+
+Produce the following deliverables in order.
+
+### Deliverable 1: Verified Website Audit
+
+A concise report containing:
+
+- Business overview.
+- Verified contact and operational details.
+- Reconciled treatment inventory.
+- Source links for important facts.
+- Existing customer journey.
+- Current booking workflow.
+- Contradictions and unresolved questions.
+
+### Deliverable 2: Brand and Design Specification
+
+Include:
+
+- Logo and asset references.
+- Verified colours and typography.
+- Existing component patterns.
+- Proposed mobile design tokens.
+- Screenshots or references to the corresponding website sections, where possible.
+- Clear separation between extracted facts and recommended changes.
+
+### Deliverable 3: Mobile Product Requirements
+
+Include:
+
+- Target users and key needs.
+- MVP features.
+- Features for later releases.
+- Screen-by-screen descriptions.
+- Main navigation.
+- Customer flows and error states.
+- User stories and acceptance criteria.
+- Dependencies on clinic staff, third-party services, and backend systems.
+
+### Deliverable 4: Technical Blueprint
+
+Include:
+
+- Recommended architecture.
+- Main entities and relationships.
+- API requirements.
+- Booking workflow.
+- Security and privacy considerations.
+- Proposed project structure.
+- Testing and deployment plan.
+
+### Deliverable 5: Implementation Roadmap
+
+Break the work into sensible phases:
+
+1. Verification and requirements.
+2. Design system and app prototype.
+3. Core treatment discovery.
+4. Consultation requests and backend integration.
+5. Appointments and optional account features.
+6. Testing, client review, and release.
+
+For each phase, identify dependencies, risks, and decisions that need client approval.
+
+## 11. Rules for Accuracy and Decision-Making
+
+- Use the live website as the primary source for published business information.
+- Do not treat the previous agent's report as verified evidence.
+- Do not invent treatments, prices, testimonials, opening hours, availability, APIs, or integrations.
+- Preserve exact treatment names where possible.
+- Link important factual findings to their source pages.
+- Distinguish current website functionality from proposed mobile functionality.
+- Label every unresolved discrepancy.
+- Do not silently reconcile contradictory information.
+- Avoid unnecessary features and overengineering.
+- Prioritise a usable, trustworthy MVP.
+- Treat medical and personal data carefully.
+- Keep the mobile experience distinct from a responsive website.
+- Ask the clinic for clarification only where the answer materially affects implementation.
+
+## 12. Immediate Next Step
+
+Begin with the website audit and brand extraction. Inspect the actual pages and interactive components before finalising the specification.
+
+Then produce the mobile application proposal and technical blueprint based on verified findings.
+
+**Do not start implementing the entire application yet.** First establish an accurate understanding of the business, document the proposed app, identify unresolved questions, and present the recommended MVP so it can be reviewed before development begins.

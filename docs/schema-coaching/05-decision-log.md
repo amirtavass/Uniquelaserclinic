@@ -1,0 +1,11 @@
+# 05 — Decision Log (append-only)
+
+| ID | Date | Context | Decision | Rationale | Consequences | Source | Status |
+|---|---|---|---|---|---|---|---|
+| D01 | 2026-10-22 | Need one app for Android + iOS for a single small clinic | React Native + Expo + TypeScript + Expo Router | Team's proven path; single codebase; native modules (push) need dev builds anyway (ADR-001) | EAS dev builds from M1 | M01 + kickoff brief | PROPOSED — awaiting owner |
+| D02 | 2026-10-22 | Relational booking domain + two security models (public content vs personal data) | Supabase (Postgres + Auth + RLS + Storage + Edge Functions) | RLS enforces role isolation in the database; Postgres fits booking state machines + history; phone OTP matches M01; low lock-in (ADR-002) | SQL migrations + `rls.sql`; server-side reminder dispatch | ADR-002 analysis | PROPOSED — awaiting owner |
+| D03 | 2026-10-22 | Client asked how appointments work in-app | v1 keeps the website's request → staff-confirm flow; no real-time availability shown | Verified live behaviour W03 ("we'll be in touch within one working day"); inventing live slots would mislead clients | `booking_requests` vs `appointments` split; S05/S12 | W03 | DRAFT — confirm Q04 |
+| D04 | 2026-10-22 | Staff message defines roles | 3 privileged seats (owner + 2 staff) + clients; owner manages seats | M01 verbatim | `user_roles`, owner-only grants, S16 | M01 | STATED by staff — confirm owner Q01 |
+| D05 | 2026-10-22 | Website form collects medical/health answers | App does NOT collect health screening data in v1 | Sensitive UK GDPR Art. 9 processing; clinic can collect at consultation; V2 §8 warns a checkbox ≠ compliance | Health fields remain web-only pending owner + legal position (Q03) | V2 §8 | PROPOSED |
+| D06 | 2026-10-22 | Opening-hours conflict reported in V1 (9–6 vs 10–6) | Use 10:00–18:00 daily; flag for owner confirmation | All four current site locations verified 22 Oct 2026 say 10–6 (W01); no silent reconciliation per V2 rules | `clinic_settings` drives open/closed widget | Live fetch | PROPOSED |
+| D07 | 2026-10-22 | Reminder delivery | Reminders dispatched server-side (Supabase Edge Function → Expo Push), scheduled on confirm/reschedule | A phone cannot wake itself reliably; keeps R06 content rules enforceable | Needs push keys in env, never committed | S07 | PROPOSED |

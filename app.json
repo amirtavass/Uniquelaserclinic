@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Unique Laser Clinics",
+    "slug": "unique-laser-clinics",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "uniquelaser",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.uniquelaserclinics.app"
+    },
+    "android": {
+      "package": "com.uniquelaserclinics.app",
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-splash-screen"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "99147fd5-58c4-4f94-9329-b52db248beb0"
+      }
+    },
+    "owner": "amirtavass2"
+  }
+}

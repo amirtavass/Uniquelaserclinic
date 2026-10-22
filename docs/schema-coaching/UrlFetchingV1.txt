@@ -1,0 +1,86 @@
+1. Business Overview & "About" SectionClinic Identity & OperationsBusiness Name: Unique Laser ClinicsTagline / Brand Motto: "Reveal your unique. Confidence. Care. Results."Hero Value Proposition: "Expert Laser Treatments in Bolton for Skin You'll Love — Safe, effective laser hair removal, skin rejuvenation, tattoo removal and pigmentation treatments at Bolton's trusted clinic on Deane Road."Physical Address: 327 Deane Road, Bolton, BL3 5HN (with easy on-street parking).Catchment Area ("Areas We Serve"): Bolton, Farnworth, Westhoughton, Horwich, Little Lever, Bury, and Greater Manchester.Operating Hours: Open 7 days a week (Monday–Sunday), 10:00 AM – 6:00 PM.Contact Channels: Phone (07301 166333), Email (hello@uniquelaserclinics.co.uk), Instagram, TikTok, and Walk-ins during quiet times.Mission & Story ("Who We Are")Unique Laser Clinics positions itself against industry hard-sell tactics, outdated IPL equipment, and vague promises. The clinic is built around medical-grade diode and Q-switched Nd:YAG laser systems, CPD-active fully insured therapists, and mandatory free 20-minute consultations + 24–48hr patch tests before any full treatment session. It caters equally to women and men in a private, non-judgmental setting.Six Core Pillars ("What Makes Us Different")Honesty First: If laser isn't right for a client's skin type (Fitzpatrick I–VI) or hair/pigment color, the clinic tells them upfront and suggests alternatives rather than taking money for a treatment that won't deliver.Skill, Not Sales: Therapists are paid salaries, not commissions—removing pressure to upsell unnecessary packages.Real Results: Before-and-after photography is tracked on every treatment course so clients can see measurable progress.Medical-Grade Tech: Uses calibrated medical-grade diode and Q-switched Nd:YAG lasers with built-in skin cooling rather than lower-efficacy IPL or home devices.Privacy Always: Discreet, private treatment rooms with no shared booths or walk-ins during sessions.Bolton Born: Proudly local on Deane Road with transparent per-session and package pricing.2. What the Business Offers (Service Catalog & Pricing)The clinic organizes its catalog into 5 primary categories encompassing 31 total treatments, with 8 core treatments highlighted on the homepage and booking widget with transparent starting prices.Core Priced Treatments (Featured on Home & Booking Flow)TreatmentCategory / Filter TagStarting PriceTypical Course & DetailsLaser Hair RemovalLaser (Unwanted hair)From £35 / sessionFace, body, underarms, legs, bikini, Brazilian, male back/chest/beard. 6–8 sessions (10–60+ mins).Laser Tattoo RemovalLaser (Tattoos)From £60 / sessionQ-switched laser for black, red, blue, and green ink. 6–10 sessions spaced 6 weeks apart.Carbon Laser PeelSkin (Ageing and texture)From £75 / session"Hollywood Facial" — deep-cleans pores, reduces oiliness, brightens tone in a single 30-min session.Pigmentation RemovalLaser / Skin (Pigment and veins)From £75 / sessionTargets age spots, sun damage, freckles, and melasma. 1–3 sessions on most lesions.Laser Acne TreatmentSkin (Acne)From £80 / sessionTargets sebaceous (oil) glands and bacteria to calm active acne and reduce scarring. 4–6 sessions.Thread Vein RemovalLaser (Pigment and veins)From £85 / sessionPrecision vascular laser for facial/leg spider veins and broken capillaries. 1–2 sessions.Laser Skin RejuvenationSkin (Ageing and texture)From £95 / sessionLaser resurfacing to smooth fine lines, tighten pores, and boost collagen. 3–6 sessions.Laser Skin TighteningAnti-Ageing (Ageing and texture)From £120 / sessionNon-surgical firming for face, neck, and jawline via collagen stimulation. 3–5 sessions.Full 31-Treatment Catalog by Category (Price on Consultation)Beyond the 8 core priced treatments above, the /treatments/ directory and /book/ selector expose 23 additional specialist treatments priced upon consultation:Laser (5): Hair Removal, Tattoo Removal, Pigmentation Removal, Thread Vein Removal, Uneven Skin Tone & Texture Correction.Skin (10): Carbon Laser Peel, Laser Skin Rejuvenation, Acne Treatment, Micro-needling, Face Glow & Radiance, HydraFacial, Skin Tag Removal, Scar Revision, Skin Brightening, Fungus Removal.Anti-Ageing / Firming (7): Laser Skin Tightening, Non-Surgical Face Lift, Anti-Ageing Treatments, Non-Surgical Eye Lift, Fine Lines & Wrinkles, HIFU Face Lift, RF (Radiofrequency) Skin Tightening.Body Contouring (6): Fat Freezing (Cryolipolysis), Body Sculpting & Shaping, Buttock Enhancement & Contouring, Muscle Building & Toning, HIFU Body Sculpting, EMS Body Sculpting, Cellulite Reduction.Wellness (4): Red Light Therapy, Eczema & Sensitive Skin Treatment, Skin Disinfection, Rapid Wound Healing.3. User StoriesClient / Prospective Patient StoriesUS-01 (Discovery & Filtering): As a prospective client with a specific skin concern (e.g., acne or unwanted hair), I want to filter treatments by symptom/category or search across all 31 treatments so I can quickly find relevant procedures and starting prices.US-02 (Quick Widget Booking): As a busy visitor on the homepage, I want a "Book in a minute" quick-selector where I can pick a treatment (or "I'm not sure yet, advise me") and a preferred day within the current week so I can jump straight into scheduling.US-03 (Consultation Request & Medical Triage): As a new client booking online, I want to select a treatment, pick an available calendar date/time slot, enter my contact info, and optionally disclose health details (medical conditions, medications, pregnancy/breastfeeding) with explicit GDPR health-data consent so the therapist is prepared for my consultation.US-04 (Real-Time Clinic Status): As a local visitor browsing outside business hours, I want to see live open/closed status badges ("Closed now, opens at 10am") and one-tap call/directions CTAs so I know when I can reach the clinic.US-05 (Safety & Suitability Education): As a first-time laser client, I want to read clear FAQs about pain levels, Fitzpatrick skin tone suitability, lunch-break appointment durations, and the 4-step clinical journey (Consultation → Patch Test → Sessions → Aftercare) to feel safe before committing.Clinic Staff / Admin StoriesUS-06 (Lead Confirmation Workflow): As a clinic receptionist, I want online booking requests to capture treatment choice, preferred slot, and preliminary contraindications so I can call the client within 1 working day to confirm their 20–30 minute consultation and patch test.US-07 (Local SEO Landing Pages): As the business owner, I want dedicated area pages (Bolton, Bury, Farnworth, Westhoughton, Horwich, Little Lever) showing local driving times, transit routes, and parking details to capture local search traffic across Greater Manchester.4. Data Schema (Relational / TypeScript Data Model)The site's content and booking architecture map cleanly to the following core entities:TypeScript// 1. Treatment Category Enum
+type TreatmentCategory = 'Laser' | 'Skin' | 'Anti-Ageing' | 'Body' | 'Wellness';
+
+type ConcernFilterTag = 
+  | 'Unwanted hair' 
+  | 'Ageing and texture' 
+  | 'Pigment and veins' 
+  | 'Acne' 
+  | 'Tattoos';
+
+// 2. Treatment Entity
+interface Treatment {
+  id: string;                        // e.g., "laser-hair-removal"
+  slug: string;                      // URL slug under /treatments/
+  name: string;                      // e.g., "Laser Hair Removal"
+  category: TreatmentCategory;       // Primary navigation category
+  filterTag?: ConcernFilterTag;      // Homepage tab filter
+  isCoreFeatured: boolean;           // True for the 8 homepage priced treatments
+  pricingModel: 'FROM_PRICE' | 'FREE' | 'PRICE_ON_CONSULTATION';
+  startingPriceGBP?: number;         // e.g., 35, 60, 75, 80, 85, 95, 120
+  shortSummary: string;              // Card description
+  recommendedSessions?: {
+    min: number;                     // e.g., 6
+    max: number;                     // e.g., 8
+    intervalWeeks?: number;          // e.g., 6 (for tattoo removal)
+  };
+  sessionDurationMinutes?: {
+    min: number;                     // e.g., 10 (upper lip)
+    max: number;                     // e.g., 60 (full legs/back)
+  };
+  requiresPatchTest: boolean;        // Default: true (24-48h prior)
+}
+
+// 3. Availability & Booking Request Entity
+interface BookingRequest {
+  id: string;
+  treatmentId: string | 'ADVISE_ME' | 'FREE_CONSULTATION';
+  preferredDate: string;             // ISO Date "YYYY-MM-DD"
+  preferredTimeSlot?: string;        // Populated dynamically once date is picked
+  clientDetails: {
+    fullName: string;                // Required (*)
+    email: string;                   // Required (*)
+    phone: string;                   // Required (*)
+  };
+  healthScreening?: {                // Optional private fields
+    medicalConditions?: string;
+    currentMedications?: string;
+    isPregnantOrBreastfeeding: boolean;
+  };
+  honeypotField?: string;            // Anti-spam ("Leave this blank")
+  consents: {
+    explicitDataAndHealthConsent: boolean; // Required (*) GDPR Art. 9 consent
+    marketingOffersOptIn: boolean;         // Optional
+  };
+  status: 'PENDING_CALL' | 'CONFIRMED' | 'PATCH_TEST_DONE' | 'COMPLETED' | 'CANCELLED';
+  createdAt: string;
+}
+
+// 4. Client Review / Testimonial Entity
+interface Testimonial {
+  id: string;
+  clientName: string;                // e.g., "Sarah M."
+  locationTown: string;              // e.g., "Bolton", "Bury", "Farnworth"
+  treatmentName: string;             // e.g., "Laser Hair Removal"
+  rating: 5;
+  quote: string;
+}
+
+// 5. Local SEO Area Served Entity
+interface AreaServedPage {
+  id: string;
+  townName: string;                  // e.g., "Bury", "Little Lever", "Bolton"
+  slug: string;                      // e.g., "/areas-served/bury/"
+  driveTimeSummary: string;          // e.g., "20-minute drive via the A58 or M66"
+  parkingInfo: string;               // "On-street parking close to the clinic"
+  featuredTreatmentIds: string[];
+}
+
+// 6. FAQ Item Entity
+interface FAQItem {
+  id: string;
+  category: 'Getting Started' | 'Safety' | 'Cost & Courses' | 'Practical';
+  question: string;
+  answer: string;
+}
+5. UI, Typography & Visual Design ChoicesLayout & Component ArchitectureThe website uses a high-conversion, clinical-luxury layout designed to build immediate trust and reduce booking friction:Top Utility Announcement Bar: Full-width thin header bar with uppercase tracking (BOLTON • PERSONALISED LASER, SKIN & BODY CARE • OPEN EVERY DAY, 10AM–6PM).Sticky Header with Mega-Menu Dropdown:Left: Brand wordmark (Unique Laser Clinics).Center: Home, Treatments (expands into a 5-column categorized mega-menu: Laser, Skin, Anti-Ageing, Body, Wellness with 22 direct links), About, Areas We Serve, FAQs, Contact.Right: Direct phone link (07301 166333) + high-contrast primary CTA button (Book Consultation).Split Hero Section with Live Status & Trust Strip:Left Column: Location pill badge (Laser clinic • Bolton), high-impact headline, value prop copy, dual CTA buttons (Book a Free Consultation primary solid + Explore Treatments secondary outline), and a dynamic real-time open/closed indicator (Closed now, opens at 10am | Or call us directly: 07301 166333).Right Column: Editorial portrait photography of glowing skin overlaid/paired with a 4-metric trust bar (8 Core Treatments • 5★ Rated by Clients • BL3 Bolton Clinic • 7 Days a Week).Interactive Treatment Filter & Card Grid:Homepage: Category filter pills (Unwanted hair, Ageing and texture, Pigment and veins, Acne, Tattoos) above a responsive card grid. Each card displays treatment title, 2–3 sentence clinical summary, session count guidance, bold starting price badge (From £35 per session), and a Learn More link.Treatments Directory (/treatments/): Live search input (Search treatments | 31 treatments) + category filter tabs (All, Laser, Skin, Firming, Body, Wellness). Each card has dual badges ([Category] + Personalised consultation).4-Step Numbered Process Timeline ("How It Works"):Clean horizontal/vertical step cards numbered 1 to 4 (Free Consultation → Patch Test → Treatment Sessions → Aftercare & Results) paired with clinic interior photography."Book in a Minute" Embedded Quick-Booking Widget:Embedded directly on the homepage above the FAQs. Step 1 renders selectable treatment pills (including an "I'm not sure yet, advise me" fallback). Step 2 renders a horizontal 7-day quick-date ribbon (Today 20, Wed 21, Thu 22...) with a modal/calendar fallback (Need a later date? Choose from the calendar).Full Booking Engine (/book/):Combines a categorized <select> dropdown (showing starting prices next to each option), an interactive monthly calendar grid with status legend (● Available, × Unavailable, ✓ Selected), required contact inputs, an expandable/optional Privacy-First Health Screening fieldset, a hidden anti-spam honeypot field, and explicit GDPR checkboxes.Persistent Mobile Bottom Action Bar:Sticky dual-action bar at the bottom of the viewport (Call the clinic | Free consultation) for thumb-friendly mobile conversion.Color Palette & Aesthetic DirectionThe aesthetic blends medical authority (clean, spotless, clinical) with warm cosmetic luxury (skin-toned neutrals, soft backgrounds, high-contrast typography):UI RoleVisual Style / TokenUsage Across SiteBackground PrimaryWarm Alabaster / Soft Ivory (#FAF8F5 – #FFFFFF)Main page canvas and alternating section backgrounds to avoid a cold hospital feel while looking spotless.Background SecondarySoft Warm Stone / Sand (#F3EFEA – #EFECE6)Treatment cards, FAQ accordions, and the embedded "Book in a minute" container.Text PrimaryDeep Charcoal / Obsidian (#18181B – #1C1917)Headings, body copy, and navigation links for crisp readability (WCAG AAA contrast).Text Secondary / MutedWarm Slate / Taupe Grey (#57534E – #6B7280)Subtitles, session count metadata, captions, and optional form helper text.Primary Brand / AccentDeep Clinical Teal / Warm Bronze-Rose (#0F766E / #9A6B56)Primary CTA buttons (Book a Free Consultation), active filter pills, step numbers, and price badges.Semantic Status ColorsEmerald Green (#10B981) & Amber/Muted Red (#EF4444)Live clinic hours indicator (Open now vs. Closed now, opens at 10am) and calendar availability dots (● Available vs × Unavailable).Borders & DividersSubtle Hairline Warm Grey (#E7E5E4)Card outlines, FAQ dividers, calendar cells, and form input borders.Typography ChoicesThe site pairs an editorial serif display font with a clean geometric/humanist sans-serif for functional UI and clinical clarity:Headings (h1, h2, h3): High-contrast Editorial Serif (such as Cormorant Garamond, Playfair Display, or Instrument Serif) or refined semi-bold display styling. Used for emotional, aspirational headlines like "Expert Laser Treatments in Bolton for Skin You'll Love" and "Reveal your unique."Body & UI Controls (body, nav, button, input): Clean Geometric/Humanist Sans-Serif (such as Plus Jakarta Sans, Inter, or DM Sans). Used for treatment descriptions, medical disclaimers, navigation menus, and form inputs to maximize legibility at 14px–16px.Micro-Copy & Eyebrow Badges: Uppercase sans-serif with wide letter-spacing (letter-spacing: 0.08em–0.12em, font-size: 0.75rem, font-weight: 600) used consistently for section eyebrows (OUR TREATMENTS, HOW IT WORKS, BOOK IN A MINUTE, LASER CLINIC • BOLTON).
