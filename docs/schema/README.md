@@ -12,7 +12,8 @@ on every business row, ADR-002).
 | [01-architecture-strategy.md](01-architecture-strategy.md) | Why the model is shaped this way; context mapping; design decisions; mobile optimisation |
 | [02-core-tables.md](02-core-tables.md) | Every table: purpose, key fields, relationships, delete rules |
 | [03-security-and-privacy.md](03-security-and-privacy.md) | Data tiers, RLS matrix, encryption, audit, GDPR deletion |
-| [04-edge-cases-and-open-questions.md](04-edge-cases-and-open-questions.md) | Contradictions found in sources; 5 critical edge cases; proposed Batch 2 questions |
+| [04-edge-cases-and-open-questions.md](04-edge-cases-and-open-questions.md) | Resolved contradiction ledger (site re-verified 26 Oct 2026); 6 critical edge cases with non-blocking demo defaults; open context |
+| [05-verification-plan.md](05-verification-plan.md) | Three-engine verification contract executed by `services/verify-schema.ts` + `supabase/introspection.sql`; story→schema coverage matrix |
 
 ## Naming continuity
 
@@ -58,5 +59,12 @@ not applied in v1.
 
 Per `AGENTS.md`, no product schema is applied before the gate process allows it. This folder is
 Phase-1 documentation. The append-only registers (`05-decision-log.md`,
-`07-questions-for-client.md`) are **not edited by this proposal**; Batch 2 questions proposed in
-04 get appended there only once accepted.
+`07-questions-for-client.md`) are **not edited by this proposal**; owner-facing Batch 2 questions
+live in `docs/decisions/01-client-questions-for-owner.md` (plain English, grouped for the clinic
+owner) and the demo-stage defaults in `docs/decisions/02-demo-assumptions.md`, and get appended to
+the registers only once accepted.
+
+Live-site reconciliation of 26 Oct 2026 closed the hours (10:00–18:00 verified on five pages) and
+catalogue-count (8 featured / 22 detail pages / 31 directory cards; 24 booking-dropdown items
+advisory until manually confirmed) contradictions; course data (`sessions_count = 6`,
+`discount_percent = 20`) is now verified FAQ content, not invented. See `04` §1 for the ledger.

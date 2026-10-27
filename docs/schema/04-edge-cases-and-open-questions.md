@@ -1,89 +1,76 @@
-# 04 — Edge Cases, Contradictions & Missing Context
+# 04 — Edge Cases, Resolved Contradictions & Open Context
 
-## 1. Contradictions between sources (flagged, not reconciled silently)
+## 1. Contradiction ledger — resolved against the live site (26 Oct 2026 fetches)
 
-| # | Contradiction | Evidence | Schema stance |
+Per the evidence rule (website > repo docs), the items previously flagged as contradictions are now
+**closed or reclassified**. V1's counting error is a known bad source, not an open question; V2's
+audit prompts have been executed.
+
+| # | Was | Now | Basis |
 |---|---|---|---|
-| 1.1 | **Health data on the web form vs none in the app.** The website booking form reportedly collects medical conditions, medications and pregnancy status (V2 §8, W-source-inventory "GDPR/health consent fields on the web form"), while D05/R04 forbid in-app collection. The same client will exist in two systems with different medical completeness — the app cannot tell staff "this client is medically cleared". | V2 vs D05 | v1 models only the *scheduling* fact (`appointments.type='patch_test'`, status) and never a clinical result. The gap is surfaced to staff as a hard-coded consultation step, not papered over with a checkbox. Blocked on Q03; `clinical.medical_screenings` is the shape if (b)/(c) chosen. |
-| 1.2 | **Packages are sold but not modellable.** Site FAQ promises "discounted course packages of six or eight sessions" and the business depends on them, yet M01/demo scope excludes payments (Q10, D-F list). | W-FAQ vs M01/08-scope | Catalogue shape ships (`course_packages`, `client_courses`), prices stay NULL (never invent), purchase is staff-recorded offline. Fully dormant but zero-migration if Q10 changes. |
-| 1.3 | **Catalogue size disagrees with itself.** Mega-menu = 22 links / 8 core priced treatments (W04, verified 22 Oct) vs the V1 extraction's 31 (with its own counts totalling 32). | W04 vs V2 §B | `published` + `content_verified` + `source_url` on `treatments` let us ship only the 8 verified rows now; the reconciliation needs the client's master export (Q09) — the schema must not guess which 14–24 links are duplicates vs missing. |
-| 1.4 | **Opening hours.** Four site locations say 10:00–18:00 (W01) but V1 reported a 9am–6am variant somewhere. | W01 vs V1 | `opening_hours.valid_from` keeps both facts *possible*; v1 seeds 10–6 marked PROPOSED (D06). Owner confirms; a change is a new row, never an edit of history. |
-| 1.5 | **Authority of M01 itself.** The whole role model (owner + exactly 2 staff) rests on an employee's message, not the owner's sign-off (Q01). | 00-source-inventory reading | `staff_seat_max` is a *setting* audited via `clinic_settings`, seeded 2 from M01 — if the owner says 3, it's a settings migration, not a redesign. |
-| 1.6 | **Session security vs current implementation.** S02 acceptance: tokens in secure storage; `lib/supabase.ts` passes AsyncStorage to `createClient`. Not a schema bug, but the compliance section (03 §4) depends on it before any T3 exists. | 01-user-stories S02 vs code | Fix in M1 hardening; noted so nobody treats "RLS done" as "secure done". |
+| 1.1 | Health fields on web form vs none in app (D05/R04) | **RESOLVED — no conflict.** `/book/` marks its health fields **optional** ("You can leave them blank and discuss relevant information directly with the clinic before treatment. Your skin type is assessed at consultation"), and `/faqs/` confirms history + skin assessment happen at the free consultation. Deferring screening to the in-person consultation (D05, v1 default) *matches the website's own fallback workflow*. Residual risk stays as edge case E3 (free-text disclosure), not a contradiction. Caveat: the `/book/` form is JS-rendered, so the field copy is quoted from the V2 walkthrough + owner statement rather than a static re-fetch — re-confirm manually. | /faqs/ verified 26 Oct; V2 §8 |
+| 1.2 | "Packages sold but not modellable" | **RESOLVED as data.** `/faqs/` verifies: six-session courses at 20% off most treatments ⇒ `course_packages.sessions_count = 6`, `discount_percent = 20` seeded as catalogue facts; interest-free 3-instalment plans on £500+ are arranged at consultation ⇒ **no payment columns; in-app payments stay parked** per 08-scope/Q10. Remaining unknown is lifecycle (expiry/transfer/refund) → E4/Q16. Note for owner (copy, not schema): homepage FAQ still says "six or eight sessions" while `/faqs/` says "six … 20 per cent" — same offer, looser wording. | /faqs/ verified 26 Oct |
+| 1.3 | Catalogue counts 8 / 22 / 31 vs 32 | **RESOLVED.** V1 mixed `/book/` dropdown options with `/treatments/` directory cards. Verified 26 Oct: 8 core priced (`is_featured`), 22 detail pages (`has_detail_page`), 31 directory cards (`show_in_directory`: 22 detail + 9 consultation-only — HIFU face lift, HIFU body sculpting, HydraFacial, RF skin tightening, EMS body sculpting, Cellulite reduction, Skin tag removal, Scar revision, Skin brightening). 24 dropdown items (`show_in_booking_dropdown`) is **asserted but JS-gated** — Engine A treats the 24-count as advisory until manually confirmed; still needs the client's master text/price export for the 23 non-core rows (that half of Q09 remains). | /treatments/, /faqs/, homepage fetches |
+| 1.4 | Opening hours 9am vs 10am | **CLOSED — contradiction retired.** Every live page checked (`/`, `/treatments/`, `/book/`, `/faqs/`, `/areas-served/`) states Monday–Sunday 10:00–18:00; the 9am report appears nowhere on the current site. Seed 10:00–18:00 as **verified truth** (Engine A asserts). `opening_hours.valid_from` versioning remains for future edits (S17), not because today is disputed. | 22 + 26 Oct fetches |
+| 1.5 | Authority of M01 | **STILL OPEN (governance, not schema)** — owner + 2 staff seats rest on the employee's message; Q01. Seat cap is a settings value (demo default 2). | 00-source-inventory |
+| 1.6 | AsyncStorage vs S02 secure-storage acceptance | **STILL OPEN (implementation, not schema)** — fix in M1 hardening; nothing in this schema depends on it, but 03's T3 ambitions do. | code vs stories |
 
-## 2. Critical edge cases
+## 2. Critical edge cases (with demo defaults applied — none block seeding)
 
 **E1 — Mandatory waiting period between laser sessions.**
-Tattoo removal is published as "six weeks apart" (FAQ ⇒ `min_gap_days = 42`); hair-removal intervals
-are area-dependent (face ~4 weeks, legs ~8–12) and **nothing on the site states them numerically**.
-Schema accommodation: `treatments.min_gap_days` (NULL = no published rule ⇒ app cannot enforce) +
-a confirm-time trigger on `appointments` that raises a warning when
-`new.scheduled_start < last_completed_session + min_gap_days` for the same client/treatment.
-The trigger *warns staff* (queue banner) rather than blocking, because clinic judgement overrides
-(early due to regrowth patterns). **Need:** per-treatment (ideally per-area) minimum intervals from
-the owner — proposed Batch-2 Q13. Also note: gaps are per treatment, and if two courses overlap on
-the same body area the rule needs area-level granularity, which implies an `areas`/`treatment_areas`
-dimension we have deliberately **not** invented (the site prices "full legs vs small areas" under one
-treatment — Q13 covers whether areas become sub-entities or stay pricing flavour text).
+Verified: tattoo removal "six weeks apart" ⇒ seeded `min_gap_days = 42`. Hair-removal intervals are
+area-dependent and numerically unpublished. Demo default: `warn_session_gap` trigger **warns staff,
+never blocks** (audit row `session_gap_warning` proves the warn fired). Body-area granularity is not
+invented — one treatment row per site service, areas as pricing copy until the owner rules.
+→ question Q13 (intervals per treatment/area).
 
-**E2 — Patch-test failure / adverse reaction between test and first session.**
-Flow: consultation → patch test 24–48 h before first session (W02/R03) → sometimes the skin reacts
-and the course must not proceed. v1 can express "PATCH_TEST appointment COMPLETED" but **has nowhere
-to store the outcome**, because outcomes are health data (D05). So today a failed patch test
-materialises as staff declining/cancelling sessions by phone — invisible to the client's app except
-as status change. Options ranked: (a) keep as-is, staff communicates offline (v1 default); (b) a
-binary, minimised `appointments.outcome enum cleared|deferred` — borderline Art. 9, needs owner +
-legal position; (c) proper `clinical.*` partition under Q03(b). **Need:** Q03 answer plus proposed
-Q14 (how does the clinic want the client to *see* "patch test unsuitable — try different settings
-later"?).
+**E2 — Patch-test failure / adverse reaction.**
+`/faqs/` sharpens the flow: patch test usually done at the consultation, 24–48 h delayed-reaction
+wait, then first full session. v1 stores the *scheduling* facts only (PATCH_TEST appointment status);
+there is deliberately nowhere to record "reaction" (D05) — staff handle suitability offline. If the
+owner wants the client-facing signal, options are (b) binary `appointments.outcome CLEARED |
+DEFERRED` (borderline Art. 9) or (c) `clinical.*` under Q03(b). → Q03 + Q14.
 
-**E3 — Clients will write medical history into free text anyway.**
-`booking_requests.notes_client` and `enquiry_messages.body` invite disclosures ("I'm pregnant",
-"taking doxycycline"). Under D05 the app doesn't *collect* health data, but once typed, it *holds*
-it — a contradiction of intent. Mitigations already in design: steering placeholder copy, the T2
-tier in 03 §1, redaction in the deletion pipeline (03 §6), and staff-training note. **Need:** owner
-decision Q15 — blocklist prompt ("please don't include medical details") vs routing health questions
-into a "discuss at consultation" canned option (structured, not free text).
+**E3 — Health disclosure in free text.**
+`notes_client` and `enquiry_messages.body` will attract medical disclosures even though the app never
+asks (site's own form has the same exposure and solved it by marking fields optional — see 1.1).
+Demo default: steering placeholder copy ("please don't include medical details — we discuss these at
+your free consultation") + T2 tier + deletion-pipeline redaction (03 §6). → Q15 (warning copy vs
+structured "ask at consultation" chips).
 
-**E4 — Course/package session rollover, expiry and transfer.**
-Real-world cases: client buys an 8-session hair-removal course, pauses for summer, wants to
-transfer remaining sessions to a sibling, or the clinic closes for a month. Schema:
-`client_courses.expires_at NULL-able` (validity unknown), usage computed (02 C5), transfer would
-need `client_course_transfers` — **not** invented now because no evidence any exist. Late-session
-validations (`min_gap_days`, E1) interact: a paused course resuming must not be blocked by its own
-history. **Need:** Q10 expansion (proposed Q16) — expiry months? transfers? refunds? Until then
-`client_courses` rows can exist with `expires_at IS NULL` and status managed by staff.
+**E4 — Course rollover, expiry, transfer, refund.**
+Verified that 6-session/20% courses exist and sell; **nothing published** about validity periods,
+pauses, transfers or refunds. Demo default: `client_courses.expires_at IS NULL`, status managed by
+staff, usage always computed from completed appointments so a paused course resumes cleanly and gap
+warnings (E1) see real history. Transfer entity not invented. → Q16.
 
-**E5 — Late cancellation, no-show and the one-phone problem.**
-(i) No-show/late-cancel: `appointments.status (… | cancelled_requested | cancelled | no_show)` +
-`appointment_events` give the clinic the full picture and make counting trivial
-(`no_show_count` as a view, never a mutable column — no invented strike system). Penalties cannot be
-modelled because the policy itself is unknown (Q05); when it arrives, it's a
-`cancellation_policy` row in `clinic_settings` + an enforced transition window, not a redesign.
-(ii) Signup: M01's unique-phone rule ("so we know who it is") collides with households sharing a
-number (partner books from the same phone; clinic already takes walk-ins, W05). The partial unique
-index on verified `phone_e164` (02 A3) would reject the second legit account with a confusing error.
-**Need:** Q17 — is a UK mobile number unique-per-client a clinic rule or a convenience? (Default
-recommendation: relax uniqueness to un-verified, keep verified unique; support "linked household"
-later only if asked.)
+**E5 — Late cancellation / no-show, and the one-phone problem.**
+(i) Statuses `CANCEL_REQUESTED / RESCHEDULE_REQUESTED / NO_SHOW` + `appointment_events` record every
+request and outcome; no penalty is enforced because Q05 has no answer — a policy arriving later is a
+`clinic_settings` row + transition-window trigger, not a redesign. (ii) Signup: phone uniqueness is
+**demo-defaulted to OTP-verified numbers only** (unverified duplicates allowed and flagged) because
+walk-in households (W05) would otherwise be rejected by a hard unique index. → Q17.
 
-## 3. Missing context — proposed Batch 2 questions
+**E6 — Age limits are now published facts.**
+`/faqs/`: "We don't treat … under 16 (under 18 for some treatments)". Nothing in v1 can check age
+because DOB is not collected (Q02). Until Q02 answers, the app's treatment pages must carry the same
+age wording (content, not constraint). If the owner wants enforcement, DOB + an age-check rule
+becomes a migration with a stated reason — this makes Q02 more urgent than Q13.
 
-(These are *proposals only*; per append-only register discipline they go into
-`docs/progress/07-questions-for-client.md` — becoming D## entries — once accepted.)
+## 3. Open questions — moved to `docs/decisions/01-client-questions-for-owner.md`
 
-- **Q13** Per-treatment/area minimum session intervals (only "tattoo 6 weeks" is published — E1).
-- **Q14** How should a failed patch test or "postpone the course" be surfaced to the client, given
-  D05 bans storing outcomes in-app? (E2)
-- **Q15** Free-text health disclosure policy in notes/enquiries: warning copy, structured routing,
-  or staff redaction duty? (E3)
-- **Q16** Course package lifecycle rules: validity period, rollover pauses, transfers, refunds? (E4)
-- **Q17** Is a verified phone number strictly one-account-per-client, including households? (E5)
+Batch 1 (Q01–Q12) stays in `docs/progress/07-questions-for-client.md` unedited (append-only
+register). Batch-2 questions raised by this schema work — **Q13** intervals/areas, **Q14** patch-test
+outcome visibility, **Q15** free-text health policy, **Q16** course lifecycle, **Q17** phone
+uniqueness, **Q18** DOB/age verification (now backed by published age rules, E6) — are written in
+plain owner-facing English in `decisions/01` and appended to the register only once the batching is
+accepted. Every one has a non-blocking demo default (`decisions/02`) so schema creation and seeding
+proceed regardless.
 
 ## 4. What this proposal deliberately does NOT contain
 
-Payment/`invoices` tables (Q10); live `slots`/`availability` (Q04/D03); `reviews` beyond the three
-verified site testimonials (W07 — displayed as seeded `updates`); `progress_media`/`clinical.*`
-applied (Q03); multi-clinic beyond `clinic_id` (08-scope); loyalty/referral/AI-advice entities
-(zero evidence — AGENTS.md "Never invent"). If any appear in a later version, they arrive with a D##
-decision and a source, exactly like everything above.
+Payment/`invoices`/instalment tables (Q10 — £500 plans are in-person); live `slots`/`availability`
+(Q04/D03/R02); `reviews` beyond the three verified site testimonials (W07); `areas` sub-entities
+(Q13 — pricing copy for now); `progress_media`/`clinical.*` applied (Q03); multi-clinic beyond
+`clinic_id` (08-scope); loyalty/referral/AI-advice entities (zero evidence — AGENTS.md "Never
+invent"). Each arrives, if ever, with a D## decision and a source, exactly like everything above.

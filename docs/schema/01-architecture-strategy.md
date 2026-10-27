@@ -9,11 +9,40 @@ R## / D## (rules & decisions in `docs/schema-coaching/`).
 
 | Website fact | Schema consequence |
 |---|---|
-| W04 — 5 treatment categories, 22 menu links, 8 core priced treatments (£35–£120/session), concern pills ("Unwanted hair", "Ageing and texture", "Pigment and veins", "Acne", "Tattoos") | `treatment_categories` (1:N to `treatments`) plus a **separate** `treatment_concerns` M:N dimension: the site's IA has one home category per treatment but a treatment answers several concerns (e.g. laser hair removal ↔ "Unwanted hair"; rejuvenation ↔ both "Ageing and texture" and "Pigment and veins"). Collapsing concerns into the category would make the homepage filter pills unimplementable without inventing data. |
-| W02 — "Every new treatment starts with a free consultation and patch test"; patch test "24 to 48 hours before your first full session" | The booking domain cannot be one table. `appointments.type` is an enum `CONSULTATION | PATCH_TEST | SESSION` and `treatments.requires_consultation` / `requires_patch_test` are first-class flags, so the chain is *data*, not app folklore (R03). |
+| W04 — **reconciled catalogue (26 Oct 2026 live fetch):** 8 core priced treatments (£35–£120 →
+  `3500`–`12000` pence), 22 mega-menu detail pages, **31 cards on `/treatments/`** (22 with detail
+  pages + 9 "book a consultation" cards such as HIFU face lift, HydraFacial, RF/EMS sculpting, skin
+  tag removal), 24 items reported in the `/book/` dropdown (JS-rendered — advisory, re-verify
+  manually), 5 categories, concern pills ("Unwanted hair", "Ageing and texture", "Pigment and
+  veins", "Acne", "Tattoos"). V1's 32-count was a mix-up of `/book/` options with directory cards —
+  closed, not an open contradiction. | `treatment_categories` (1:N to `treatments`) plus a **separate**
+  `treatment_concerns` M:N dimension: the site's IA has one home category per treatment but a treatment
+  answers several concerns (e.g. laser hair removal ↔ "Unwanted hair"; rejuvenation ↔ both "Ageing and
+  texture" and "Pigment and veins"). Collapsing concerns into the category would make the homepage filter
+  pills unimplementable without inventing data. Four visibility flags (`is_featured`,
+  `has_detail_page`, `show_in_directory`, `show_in_booking_dropdown`) let one seed file carry the exact
+  8 / 22 / 31 / 24 breakdown without inventing entities (02 §B2). |
+| W02 — "Every new treatment starts with a free consultation and patch test"; patch test "24 to 48
+  hours before your first full session"; `/faqs/` adds that the patch test is usually performed **on
+  the consultation day** and the 20-minute consultation reviews medical history | The booking domain
+  cannot be one table. `appointments.type` is an enum `CONSULTATION | PATCH_TEST | SESSION` and
+  `treatments.requires_consultation` / `requires_patch_test` are first-class flags, so the chain is
+  *data*, not app folklore (R03). Consultation and patch test may share a day — two appointment rows,
+  not one. |
 | W03 — request → "we'll be in touch within one working day"; no live slots | `booking_requests` (client intent, mutable status machine) is split from `appointments` (staff-committed calendar facts). One request confirms into one-or-more appointments. A single merged `bookings` table would force either fake availability or overwrite the client's original ask — both break the verified workflow (D03, R02). |
-| W04/FAQ — "discounted course packages of six or eight sessions"; per-session prices | `course_packages` (catalogue) + `client_courses` (a client's purchased course) + `appointments.course_id`. Prices stay NULL-until-published — the site gives no package figures, and we never invent (R05, "Never" list). Purchase/payments remain out of v1 (Q10) but the shape costs nothing now and avoids a painful retrofit later. |
-| W01 — 10:00–18:00 daily, 7 days (D06 still pending owner) | `opening_hours` with `valid_from` — hours are a *published, versioned fact*, because the V1 report found a 9am/10am conflict; the open/closed widget must read the currently-valid row, and history must survive a change. |
+| W-FAQ — **verified 26 Oct on `/faqs/`:** "course packages of six sessions at 20 per cent off most
+  treatments" + interest-free payment plans on courses of £500+ split over three monthly instalments
+  (arranged in person) | `course_packages` (catalogue: `sessions_count = 6`, `discount_percent = 20` —
+  verified data) + `client_courses` (a client's course, staff-recorded) + `appointments.course_id`.
+  Absolute package prices are still not published (discount is % off session rates) so `price_pence`
+  stays NULL (R05); payment plans and any in-app purchase remain parked (Q10). The homepage FAQ's
+  looser "six or eight sessions" wording vs `/faqs/`' specific "six … 20 per cent" is a copy question
+  for the owner (`decisions/02-demo-assumptions.md`), not a schema contradiction. |
+| W01 — **verified truth, re-confirmed 26 Oct 2026:** every live page (`/`, `/treatments/`, `/book/`,
+  `/faqs/`, `/areas-served/`) states Monday–Sunday 10:00–18:00. The V1 "9am" report does not appear
+  anywhere on the current site — contradiction closed. | `opening_hours` seeded 10:00–18:00 × 7 with
+  `valid_from` versioning anyway, because opening hours are a *published fact that can change*: the
+  open/closed widget reads the currently-valid row and history must survive any future edit (S17). |
 | W06 — Fitzpatrick suitability, insured therapists, before/after photography | Designed into the **dormant `clinical` schema** (02 §E), not into `public`: app-side health data collection is parked by D05/R04 pending Q03. |
 | W08 — FAQs, testimonials, aftercare as content | `faq_items`, `updates` (with revisions) — staff-editable content tables with draft/publish states; testimonials deliberately excluded (only 3 verifiable, W07 — no review entity invented). |
 
@@ -64,11 +93,19 @@ Everything else joins.
 - Append-only: `REVOKE UPDATE, DELETE` on event/history tables + guard triggers; even the service
   role obeys, so "the register is append-only" is a database fact (AGENTS.md "Never").
 
-**e. Enum handling.** Postgres `enum` types per status in a dedicated `app`-owned type namespace
-(`booking_status`, `appointment_type`, `appointment_status`, `pricing_model`, `time_band`,
-`consent_kind`, `reminder_status`, `role`), values UPPERCASE. Enums (not check-constraint text)
-give the mobile TS codegen a closed union and make an unknown state a hard write error rather than
-silent UI breakage.
+**e. Enum handling & casing convention (single standard, per 01-user-stories wording).**
+Postgres `enum` types per status in a dedicated `app`-owned type namespace (`booking_status`,
+`appointment_type`, `appointment_status`, `pricing_model`, `time_band`, `consent_kind`,
+`reminder_status`, …). **Rule: enum labels are exactly the strings `docs/schema-coaching/01-user-
+stories.md` already writes** — UPPERCASE with underscores for statuses/types/kinds/channels
+(`PENDING | CONFIRMED | DECLINED | RESCHEDULED | CANCELLED`, `CONSULTATION | PATCH_TEST | SESSION`,
+`CANCEL_REQUESTED | RESCHEDULE_REQUESTED`, `DRAFT | PUBLISHED`, `OPEN | ANSWERED | CLOSED`,
+`IOS | ANDROID`, `PUSH | SMS`, `GRANTED | WITHDRAWN`) — **lowercase only where the stories themselves
+use lowercase**, i.e. the three role names `owner | staff | client` (R01). Non-enum action tags
+(`audit_log.action` e.g. `directory_view`) stay lowercase snake_case. Enums (not check-constraint
+text) give the mobile TS codegen a closed union and make an unknown state a hard write error rather
+than silent UI breakage. `npm run verify` (Engine B) fails the build if any enum label deviates from
+this contract.
 
 **f. One-tenant shape, multi-tenant structure.** Every business table carries
 `clinic_id uuid NOT NULL REFERENCES clinics` with composite FKs where children must stay inside

@@ -237,7 +237,7 @@ Evidence: M01.
 As staff, I want to edit prices, descriptions, and published opening hours, so that the app never
 shows stale data. Acceptance: edits snapshot old values (R05); hours drive the open/closed widget.
 Whether editing happens in-app or in a web dashboard is Q09.
-Data implications: `treatments`, `price_history`, `clinic_settings`.
+Data implications: `treatments`, `treatment_price_history`, `clinic_settings`.
 Evidence: V2 §7.
 
 ### S18 — Client directory (staff view) [NOT YET BRIEFED]

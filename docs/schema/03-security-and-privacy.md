@@ -41,12 +41,12 @@ Edge Functions (reminder dispatch) only — never bundled in the app (`.env` spl
 | catalogue/content tables | SELECT (published=true only, via policy predicate) | + SELECT | SELECT, INSERT, UPDATE | SELECT, UPDATE | all |
 | `client_profiles` | — | SELECT, UPDATE (own; phone change resets `phone_verified_at`) | SELECT (directory S18 — audited) | SELECT | all |
 | `user_roles` | — | — | — | SELECT; INSERT/UPDATE grants & revokes only | all |
-| `booking_requests` | — | SELECT own, INSERT own (status forced `pending` by trigger; snapshot columns server-computed, not client-supplied) | SELECT all, UPDATE `status/decided_by/decision_reason` only (column-privilege grant, not row rewrite) | all of staff | all |
+| `booking_requests` | — | SELECT own, INSERT own (status forced `PENDING` by trigger; snapshot columns server-computed, not client-supplied) | SELECT all, UPDATE `status/decided_by/decision_reason` only (column-privilege grant, not row rewrite) | all of staff | all |
 | `booking_request_events`, `appointment_events`, `*_history`, `update_revisions`, `enquiry_messages`, `audit_log`, `consent_records` | — | SELECT own (where user-linked); INSERT own (requests: `booking_requests`-linked events; `consent_records`; `enquiry_messages`) | SELECT all; INSERT (their own actions) | staff + | all — **UPDATE/DELETE revoked for every role** |
 | `appointments` | — | SELECT own | SELECT all, INSERT/UPDATE all (staff create walk-ins) | staff + | all |
 | `reminders` | — | SELECT own | SELECT all; UPDATE dispatch-status only via service | — | all |
-| `enquiries` | — | SELECT/INSERT own; UPDATE `status` ∈ {open→cancelled-by-client} | SELECT all, UPDATE status/reply via `enquiry_messages` | staff + | all |
-| `updates` | SELECT published | SELECT published + upsert own `update_reads` | SELECT all, INSERT/UPDATE drafts+publish | staff + | all |
+| `enquiries` | — | SELECT/INSERT own; UPDATE `status` OPEN → `CLOSED` (client cancel) | SELECT all, UPDATE status/reply via `enquiry_messages` | staff + | all |
+| `updates` | SELECT `PUBLISHED` | SELECT `PUBLISHED` + upsert own `update_reads` | SELECT all, INSERT/UPDATE drafts+publish | staff + | all |
 | `consent_records` | — | SELECT own, INSERT own (new decision rows) | SELECT all | SELECT all | all |
 | `deletion_requests` | — | INSERT own, SELECT own | SELECT all | SELECT + UPDATE status (workflow) | all |
 | `clinical.*` (dormant) | **no USAGE on schema** | none | none directly — only via `app.clinical_*` DEFINER functions with staff check inside | same | all |
@@ -85,11 +85,13 @@ Notes:
   (AGENTS.md "Never commit PDFs/personal data") — Storage holds the object, `consent_records` /
   `clinical.consent_signatures` hold `policy_version`, `policy_text_hash` (sha256 of exact wording),
   `signature_hash`, `signed_at`, `source`. That tuple is what proves who agreed to what text,
-  without keeping a readable document in a row. Withdrawal = new `withdrawn` row; the granted row
+  without keeping a readable document in a row. Withdrawal = new `WITHDRAWN` row; the `GRANTED` row
   stays.
-- **Staff directory audit:** every `client_profiles` SELECT by staff logs
-  `audit_log(action='directory_view', target_id, actor)` via a policy-side `SECURITY DEFINER`
-  logging function in the read path — S18 acceptance ("access audited") with no app-code trust.
+- **Staff directory audit:** staff read `client_profiles` through `app.search_clients(q)` —
+  a `SECURITY DEFINER` RPC that internally checks `app.is_staff()`, applies tenant filters, and
+  inserts `audit_log(action='directory_view')` per call (Postgres cannot trigger on SELECT, so the
+  read path itself is the audited seam; direct table SELECT by staff is allowed but the app must
+  use the RPC — Engine A2 asserts the audit row from an RPC call).
 - **Retention schedule (per record class):** T1 booking history — 6 years (aligned to UK financial
   record practice, confirm with owner); consent evidence — lifetime of client relationship + legal
   retention; notifications — 12 months; audit log — 24 months, then archive & pseudonymise actor
@@ -105,18 +107,18 @@ Notes:
    withdrawn first (new `consent_records` rows, R08).
 3. Pipeline (Edge Function, service role, steps individually audited to `audit_log`):
    - `auth.admin.deleteUser()` → removes email/password/OTP identity (Supabase-managed PII).
-   - `client_profiles`: name → `'Deleted client'`, `phone_e164/raw` → NULL,
-     `pseudonymised_at = now()`.
-   - `booking_requests` / `appointments` / `enquiries`: `client_user_id → NULL` **is avoided** —
-     FKs are RESTRICT while rows live; instead rows keep the (now meaningless) uuid and all
-     *readable* PII comes only from `client_name_snapshot`-style columns which are set to
-     `'Former client'`. `notes_client` and `enquiry_messages.body` for that user are **redacted**
-     (`'[redacted — deletion request]'`) because T2 free text is the actual personal content.
-   - `notification_tokens` hard-deleted (useless without identity); `consent_records` retained
-     (Art. 6(1)(f)/6(1)(c) evidence obligation — hash contains no PII anyway); `reminders`,
-     `update_reads` deleted.
-4. Status `completed`; `retained_for` marker on financial/clinical rows:
-   `legal_obligation | claims_defence` so a future auditor can see *why* a shell row exists.
+    - `client_profiles`: name → `'Deleted client'`, `phone_e164/raw` → NULL,
+      `pseudonymised_at = now()`.
+    - `booking_requests` / `appointments` / `enquiries`: `client_user_id → NULL` **is avoided** —
+      FKs are RESTRICT while rows live; instead rows keep the (now meaningless) uuid and all
+      *readable* PII comes only from `client_name_snapshot`-style columns which are set to
+      `'Former client'`. `notes_client` and `enquiry_messages.body` for that user are **redacted**
+      (`'[redacted — deletion request]'`) because T2 free text is the actual personal content.
+    - `notification_tokens` hard-deleted (useless without identity); `consent_records` retained
+      (Art. 6(1)(f)/6(1)(c) evidence obligation — hash contains no PII anyway); `reminders`,
+      `update_reads` deleted.
+4. Status `COMPLETED`; `retained_for` marker on financial/clinical rows:
+   `LEGAL_OBLIGATION | CLAIMS_DEFENCE` so a future auditor can see *why* a shell row exists.
 
 This keeps the clinic's books and course/pack history intact (no broken FKs, no vanished takings)
 while removing what identifies the person — the balance Art. 17 actually requires. Multi-year HMRC
