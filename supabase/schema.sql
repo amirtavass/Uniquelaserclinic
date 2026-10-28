@@ -37,35 +37,42 @@ $$ select value #>> '{}' from clinic_settings where key = k limit 1 $$;
 
 -- ---------------------------------------------------------------- enums
 do $$
-declare e text[]; n text; labels text[];
+declare
+  spec constant jsonb := $json${
+    "app_role":                 ["owner","staff","client"],
+    "request_kind":             ["CONSULTATION","TREATMENT","ADVISE_ME"],
+    "booking_status":           ["PENDING","CONFIRMED","DECLINED","RESCHEDULED","CANCELLED"],
+    "time_band":                ["MORNING","AFTERNOON","EVENING"],
+    "request_event_action":     ["CREATED","CONFIRMED","DECLINED","RESCHEDULE_PROPOSED","CANCELLED","NOTE_ADDED"],
+    "appointment_type":         ["CONSULTATION","PATCH_TEST","SESSION"],
+    "appointment_status":       ["SCHEDULED","COMPLETED","CANCELLED","CANCEL_REQUESTED","RESCHEDULE_REQUESTED","NO_SHOW"],
+    "appointment_event_action": ["SCHEDULED","CONFIRMED_BY_STAFF","COMPLETED","CANCEL_REQUESTED","CANCELLED","RESCHEDULE_REQUESTED","RESCHEDULED","NO_SHOW_RECORDED"],
+    "pricing_model":            ["PER_SESSION","FROM_PRICE","PRICE_ON_CONSULTATION","FREE"],
+    "token_platform":           ["IOS","ANDROID"],
+    "token_status":             ["ACTIVE","STALE"],
+    "consent_kind":             ["DATA_PROCESSING","MARKETING","NOTIFICATIONS"],
+    "consent_decision":         ["GRANTED","WITHDRAWN"],
+    "consent_source":           ["APP","WEB","IN_PERSON"],
+    "deletion_status":          ["REQUESTED","IN_REVIEW","COMPLETED","REJECTED"],
+    "reminder_channel":         ["PUSH","SMS"],
+    "reminder_status":          ["SCHEDULED","SENT","FAILED","CANCELLED"],
+    "update_status":            ["DRAFT","PUBLISHED"],
+    "enquiry_status":           ["OPEN","ANSWERED","CLOSED"],
+    "message_author_role":      ["CLIENT","STAFF"],
+    "notification_kind":        ["APPOINTMENT_REMINDER","BOOKING_UPDATE","ENQUIRY_REPLY","NEW_UPDATE"],
+    "course_status":            ["ACTIVE","COMPLETED","EXPIRED","REFUNDED"]
+  }$json$::jsonb;
+  n text; labels text;
 begin
-  foreach n, labels in array [
-    ['app_role',                array['owner','staff','client']],
-    ['request_kind',            array['CONSULTATION','TREATMENT','ADVISE_ME']],
-    ['booking_status',          array['PENDING','CONFIRMED','DECLINED','RESCHEDULED','CANCELLED']],
-    ['time_band',               array['MORNING','AFTERNOON','EVENING']],
-    ['request_event_action',    array['CREATED','CONFIRMED','DECLINED','RESCHEDULE_PROPOSED','CANCELLED','NOTE_ADDED']],
-    ['appointment_type',        array['CONSULTATION','PATCH_TEST','SESSION']],
-    ['appointment_status',      array['SCHEDULED','COMPLETED','CANCELLED','CANCEL_REQUESTED','RESCHEDULE_REQUESTED','NO_SHOW']],
-    ['appointment_event_action',array['SCHEDULED','CONFIRMED_BY_STAFF','COMPLETED','CANCEL_REQUESTED','CANCELLED','RESCHEDULE_REQUESTED','RESCHEDULED','NO_SHOW_RECORDED']],
-    ['pricing_model',           array['PER_SESSION','FROM_PRICE','PRICE_ON_CONSULTATION','FREE']],
-    ['token_platform',          array['IOS','ANDROID']],
-    ['token_status',            array['ACTIVE','STALE']],
-    ['consent_kind',            array['DATA_PROCESSING','MARKETING','NOTIFICATIONS']],
-    ['consent_decision',        array['GRANTED','WITHDRAWN']],
-    ['consent_source',          array['APP','WEB','IN_PERSON']],
-    ['deletion_status',         array['REQUESTED','IN_REVIEW','COMPLETED','REJECTED']],
-    ['reminder_channel',        array['PUSH','SMS']],
-    ['reminder_status',         array['SCHEDULED','SENT','FAILED','CANCELLED']],
-    ['update_status',           array['DRAFT','PUBLISHED']],
-    ['enquiry_status',          array['OPEN','ANSWERED','CLOSED']],
-    ['message_author_role',     array['CLIENT','STAFF']],
-    ['notification_kind',       array['APPOINTMENT_REMINDER','BOOKING_UPDATE','ENQUIRY_REPLY','NEW_UPDATE']],
-    ['course_status',           array['ACTIVE','COMPLETED','EXPIRED','REFUNDED']]
-  ] loop
+  for n, labels in
+    select s.key,
+           (select string_agg(quote_literal(l.label), ', ')
+              from jsonb_array_elements_text(s.value) as l(label))
+      from jsonb_each(spec) as s
+  loop
     if not exists (select 1 from pg_type t join pg_namespace x on x.oid=t.typnamespace
                    where x.nspname='public' and t.typname = n) then
-      execute format('create type public.%I as enum (%L)', n, labels);
+      execute format('create type public.%I as enum (%s)', n, labels);
     end if;
   end loop;
 end $$;
@@ -445,8 +452,9 @@ begin
   return new;
 end $$;
 
-create or replace function app.block_client_status_edit() returns trigger language plpgsql as
-$$ begin
+create or replace function app.block_client_status_edit() returns trigger language plpgsql
+security definer set search_path=public,pg_catalog as $$
+begin
   if not app.is_staff() and (
        new.status is distinct from old.status
        or new.decided_by is distinct from old.decided_by
@@ -471,10 +479,11 @@ begin
       else 'NOTE_ADDED' end;
   end if;
   insert into booking_request_events (request_id, actor_user_id, actor_role, action, detail)
-  values (coalesce(new.id, old.id), auth.uid(),
+  values (new.id, auth.uid(),
           coalesce((select ur.role from user_roles ur where ur.user_id = auth.uid()
                     and ur.revoked_at is null limit 1), 'client'),
-          act, jsonb_build_object('from', old.status, 'to', new.status));
+          act, case when tg_op = 'INSERT' then jsonb_build_object('to', new.status)
+                    else jsonb_build_object('from', old.status, 'to', new.status) end);
   return new;
 end $$;
 
@@ -488,7 +497,6 @@ begin
       when 'CANCEL_REQUESTED'      then 'CANCEL_REQUESTED'
       when 'CANCELLED'             then 'CANCELLED'
       when 'RESCHEDULE_REQUESTED'  then 'RESCHEDULE_REQUESTED'
-      when 'RESCHEDULED'           then 'RESCHEDULED'
       when 'NO_SHOW'               then 'NO_SHOW_RECORDED'
       else 'CONFIRMED_BY_STAFF' end;
   end if;
@@ -496,7 +504,8 @@ begin
   values (new.id, auth.uid(),
           coalesce((select ur.role from user_roles ur where ur.user_id = auth.uid()
                     and ur.revoked_at is null limit 1), 'client'),
-          act, jsonb_build_object('from', old.status, 'to', new.status));
+          act, case when tg_op = 'INSERT' then jsonb_build_object('to', new.status)
+                    else jsonb_build_object('from', old.status, 'to', new.status) end);
   return new;
 end $$;
 
@@ -637,10 +646,10 @@ end $$;
 
 -- ADR-005 deletion pipeline (owner-gated, audited step by step)
 create or replace function app.apply_deletion(p_request_id uuid) returns void
-language plpgsql security definer set search_path=public,pg_catalog
-set app.allow_append_only_write = 'on' as $$
+language plpgsql security definer set search_path=public,pg_catalog as $$
 declare u uuid;
 begin
+  perform set_config('app.allow_append_only_write', 'on', true);
   if not app.is_owner() then raise exception 'deletion is owner-executed' using errcode='42501'; end if;
   select dr.user_id into u from deletion_requests dr where dr.id = p_request_id;
   if u is null then raise exception 'deletion request not found'; end if;
@@ -652,7 +661,7 @@ begin
     retained_for='LEGAL_OBLIGATION' where client_user_id = u;
   update enquiry_messages set body='[redacted — deletion request]'
     where enquiry_id in (select id from enquiries where client_user_id = u);
-  update enquiries set client_name_snapshot='Former client', retained_for='LEGAL_OBLIGATION'
+  update enquiries set client_name_snapshot='Former client'
     where client_user_id = u;
   update appointments set client_name_snapshot='Former client',
     retained_for=coalesce(retained_for,'LEGAL_OBLIGATION') where client_user_id = u;
@@ -669,10 +678,10 @@ end $$;
 
 -- ADR-006 test-data hygiene: deletes ONLY persona rows matched by run_id.
 create or replace function app.purge_verification_data(run_id text) returns integer
-language plpgsql security definer set search_path=public,pg_catalog
-set app.allow_append_only_write = 'on' as $$
+language plpgsql security definer set search_path=public,pg_catalog as $$
 declare ids uuid[]; n int;
 begin
+  perform set_config('app.allow_append_only_write', 'on', true);
   select coalesce(array_agg(au.id), '{}') into ids
     from auth.users au where au.email like 'verify+'||run_id||'-%';
   if array_length(ids,1) is null then return 0; end if;

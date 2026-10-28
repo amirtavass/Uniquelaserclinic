@@ -199,6 +199,7 @@ create policy rev_insert on public.update_revisions for insert to authenticated
 
 -- ---------------------------------------------------------------- T2 communication
 drop policy if exists enq_rw on public.enquiries;
+drop policy if exists enq_select on public.enquiries;
 create policy enq_select on public.enquiries for select to authenticated
   using (client_user_id = auth.uid() or app.is_staff());
 drop policy if exists enq_insert on public.enquiries;

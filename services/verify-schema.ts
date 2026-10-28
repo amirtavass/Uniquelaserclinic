@@ -90,7 +90,7 @@ const isMissing = (r: ApiRes): boolean =>
   ['PGRST205', 'PGRST202', '42P01', 'PGRST404'].includes(r.err?.code ?? '') || r.status === 404;
 
 async function countRows(table: string, filter: string, token?: string): Promise<number | null> {
-  const r = await rest('GET', table, `select=id&${filter}&head=true&count=exact`, { token });
+  const r = await rest('GET', table, `select=id&${filter}`, { token, prefer: 'count=exact' });
   if (!r.ok) return null;
   return r.count ?? 0;
 }
@@ -112,14 +112,16 @@ const PLAN_IDS = [
 ];
 
 async function preflight(): Promise<boolean> {
-  const c = await countRows('treatments', 'published=eq.true');
-  if (c === null) {
+  const probe = await rest('GET', 'treatments', 'select=id&published=eq.true', { prefer: 'count=exact' });
+  if (!probe.ok) {
     console.log('\n  Schema probe failed on public.treatments — demo schema is NOT applied yet.');
+    console.log(`  Probe: HTTP ${probe.status} ${JSON.stringify(probe.err)}`);
     console.log('  Apply supabase/schema.sql + rls.sql + introspection.sql, seed from verified site');
     console.log('  content, then re-run. All checks report BLOCKED (never silently skipped).\n');
-    for (const id of PLAN_IDS) record(id, 'BLOCKED', 'schema not applied (PGRST205 on treatments)');
+    for (const id of PLAN_IDS) record(id, 'BLOCKED', 'schema not applied (treatments probe failed)');
     return false;
   }
+  const c = probe.count ?? 0;
   console.log(`  treatments present (${c} published rows) — running engines`);
   return true;
 }
@@ -187,9 +189,12 @@ async function engineA(): Promise<void> {
   const controlOk = !control.ok && ['23503', '400'].includes(String(control.err?.code)) || control.ok;
   record('A-09', tripOk && controlOk ? 'PASS' : 'FAIL', `treatment-name body rejected=${tripOk}; generic body passed trigger=${!poison.ok && control.err?.code !== 'P0001'}`);
 
-  const lower = await rest('PATCH', 'booking_requests', 'id=eq.00000000-0000-0000-0000-000000000000', { body: { status: 'pending' } });
+  const anyT = await rows('treatments', 'id', 'limit=1');
+  const lower = anyT?.[0]?.id
+    ? await rest('PATCH', 'treatments', `id=eq.${anyT[0].id}`, { body: { pricing_model: 'per_session' } })
+    : { ok: false, status: 0, data: null, err: { code: 'n/a' } } as ApiRes;
   record('A-10', !lower.ok && String(lower.err?.code).startsWith('22') ? 'PASS' : lower.ok ? 'FAIL' : 'WARN',
-    `lowercase enum label on booking_requests.status rejected as ${lower.err?.code ?? 'n/a'} (contract: UPPERCASE, 01 §2e)`);
+    `lowercase enum label rejected as ${lower.err?.code ?? 'n/a'} (contract: labels UPPERCASE, 01 §2e)`);
 }
 
 async function firstClinicId(): Promise<string> {
@@ -247,7 +252,7 @@ async function engineA2(): Promise<void> {
   if (staffDenied.ok) record('P-11', 'FAIL', 'staff could grant roles');
 
   // P-01 sign-up + consent (client-side inserts via own token).
-  const prof = await rest('POST', 'client_profiles', 'select=id', { token: P.clientA.token, body: { clinic_id: clinic, user_id: P.clientA.id, first_name: 'Verify', last_name: 'ClientA', phone_e164: '+4479' + Math.floor(10000000 + Math.random() * 89999999) } });
+  const prof = await rest('POST', 'client_profiles', 'select=id,phone_e164', { token: P.clientA.token, body: { clinic_id: clinic, user_id: P.clientA.id, first_name: 'Verify', last_name: 'ClientA', phone_e164: '+4479' + Math.floor(10000000 + Math.random() * 89999999) } });
   const consent = await rest('POST', 'consent_records', '', { token: P.clientA.token, body: { clinic_id: clinic, user_id: P.clientA.id, kind: 'DATA_PROCESSING', policy_version: 'verify-1', policy_text_hash: 'x'.repeat(64), decision: 'GRANTED', source: 'APP', recorded_at: new Date().toISOString() } });
   record('P-01', prof.ok && consent.ok ? 'PASS' : 'FAIL', `profile=${prof.ok} consent=${consent.ok} (${JSON.stringify([prof.err?.code, consent.err?.code])})`);
 
@@ -372,9 +377,12 @@ async function engineA2(): Promise<void> {
   }
 
   // P-15 hours versioning.
-  const newRow = await rest('POST', 'opening_hours', 'select=valid_from', { token: P.owner.token, body: { clinic_id: clinic, weekday: 1, is_open: true, opens: '10:00', closes: '18:00', valid_from: isoDay(1) } });
+  const tomorrow = isoDay(1);
+  await rest('DELETE', 'opening_hours', `clinic_id=eq.${clinic}&weekday=eq.1&valid_from=eq.${tomorrow}`);
+  const newRow = await rest('POST', 'opening_hours', 'select=valid_from', { token: P.owner.token, body: { clinic_id: clinic, weekday: 1, is_open: true, opens: '10:00', closes: '18:00', valid_from: tomorrow } });
   const curToday = await rows('opening_hours', 'opens', 'weekday=eq.1&valid_from=lte.' + isoDay(0) + '&order=valid_from.desc&limit=1');
   record('P-15', newRow.ok && curToday?.[0]?.opens === '10:00:00' ? 'PASS' : 'FAIL', `tomorrow-row=${newRow.ok} current still 10:00=${curToday?.[0]?.opens}`);
+  await rest('DELETE', 'opening_hours', `clinic_id=eq.${clinic}&weekday=eq.1&valid_from=eq.${tomorrow}`);
 }
 
 function randomUuid(): string {
@@ -410,7 +418,7 @@ async function engineR(): Promise<void> {
       for (const who of [P.clientA, P.clientB]) {
         await rest('POST', 'client_profiles', '', { body: { clinic_id: cl, user_id: who.id, first_name: 'Verify', last_name: who.email.split('-')[1] ?? who.id.slice(0, 4), phone_e164: '+4479' + Math.floor(10000000 + Math.random() * 89999999) } });
         await rest('POST', 'consent_records', '', { body: { user_id: who.id, kind: 'DATA_PROCESSING', policy_version: 'verify-1', policy_text_hash: 'z'.repeat(64), decision: 'GRANTED', source: 'APP' } });
-        await rest('POST', 'booking_requests', '', { body: { clinic_id: cl, client_user_id: who.id, request_kind: 'CONSULTATION', preferred_date: isoDay(2), preferred_time_band: 'MORNING', notes_client: 'isolation probe ' + RUN_ID } });
+        await rest('POST', 'booking_requests', '', { body: { clinic_id: cl, client_user_id: who.id, request_kind: 'ADVISE_ME', preferred_date: isoDay(2), preferred_time_band: 'MORNING', notes_client: 'isolation probe ' + RUN_ID } });
       }
     } catch (e: any) {
       ['R-01', 'R-02', 'R-03', 'R-04', 'R-05', 'R-06'].forEach(id => record(id, 'BLOCKED', 'persona bootstrap failed: ' + e.message));
@@ -421,7 +429,7 @@ async function engineR(): Promise<void> {
   const clinic = await firstClinicId();
   await rest('POST', 'client_profiles', '', { body: { clinic_id: clinic, user_id: P.clientB.id, first_name: 'Verify', last_name: 'ClientB2', phone_e164: '+447911' + Math.floor(1000000 + Math.random() * 8999999) } });
   await rest('POST', 'consent_records', '', { body: { clinic_id: clinic, user_id: P.clientB.id, kind: 'DATA_PROCESSING', policy_version: 'verify-1', policy_text_hash: 'y'.repeat(64), decision: 'GRANTED', source: 'APP', recorded_at: new Date().toISOString() } });
-  const bReq = await rest('POST', 'booking_requests', 'select=id', { body: { clinic_id: clinic, client_user_id: P.clientB.id, request_kind: 'CONSULTATION', preferred_date: isoDay(3), preferred_time_band: 'EVENING' } });
+  const bReq = await rest('POST', 'booking_requests', 'select=id', { body: { clinic_id: clinic, client_user_id: P.clientB.id, request_kind: 'ADVISE_ME', preferred_date: isoDay(3), preferred_time_band: 'EVENING' } });
   const bEnq = await rest('POST', 'enquiries', 'select=id', { body: { clinic_id: clinic, client_user_id: P.clientB.id, client_name_snapshot: 'B', status: 'OPEN' } });
   await rest('POST', 'notifications', '', { body: { user_id: P.clientB.id, kind: 'BOOKING_UPDATE', title: 'An update from Unique Laser Clinics', body: 'An update from Unique Laser Clinics — open the app to view.', route: '/home' } });
 

@@ -77,8 +77,8 @@ begin
       where table_schema = 'clinical' and grantee in ('anon','authenticated')
     ), '[]'::jsonb),
     'storage_bucket_public', coalesce((
-      select jsonb_agg(bucket_name) from storage.buckets
-      where (bucket_name = 'consents' or bucket_name = 'progress-media') and public
+      select jsonb_agg(name) from storage.buckets
+      where (name = 'consents' or name = 'progress-media') and public
     ), '[]'::jsonb)
   ) into v_clinical_grants;
 
@@ -151,12 +151,13 @@ begin
     from pg_type t
     join pg_enum e on e.enumtypid = t.oid
     join pg_namespace n on n.oid = t.typnamespace
-    where t.typname <> 'app_role' and e.enumlabel !~ '^[A-Z0-9_]+$'
+    where n.nspname = 'public' and t.typname <> 'app_role' and e.enumlabel !~ '^[A-Z0-9_]+$'
     union all
     select e.enumlabel || ' :: ' || t.typname
     from pg_type t
     join pg_enum e on e.enumtypid = t.oid
-    where t.typname = 'app_role' and e.enumlabel !~ '^[a-z_]+$'
+    join pg_namespace n on n.oid = t.typnamespace
+    where n.nspname = 'public' and t.typname = 'app_role' and e.enumlabel !~ '^[a-z_]+$'
   ) ev;
 
   -- 8. Required named triggers present (05 plan prerequisites).
