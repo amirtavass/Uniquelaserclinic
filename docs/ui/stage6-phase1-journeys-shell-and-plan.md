@@ -1,7 +1,9 @@
 # Stage 6 — Phase 1: Journey Verticals, Shell Options & Execution Plan
 
-**Doc status:** DRAFT FOR REVIEW — awaits Gate 6 sign-off (see "Confirm before I generate", §3).
-**Date:** 2026-10-27 · **Predecessors:** Gate 4 + Gate 5 signed; Schema v1 LOCKED
+**Doc status:** PHASE 1 APPROVED 2026-10-28 — sign-off answers recorded in Appendix A below;
+Phase 2 (`docs/ui/` full tree) generated same day and now **awaits Gate 6 review**. Treat this
+file as the historical plan (dated 2026-10-27); `00`–`05` + `sections/` are the current spec.
+**Predecessors:** Gate 4 + Gate 5 signed; Schema v1 LOCKED
 (`npm run verify` 35 PASS · 0 FAIL · 1 WARN (A-04) · 0 BLOCKED; `verify:rls` 7 PASS; typecheck clean).
 **Hard rule:** `app/` product screens remain locked until Gate 6 clears.
 **Sources:** `docs/schema-coaching/01-user-stories.md` (S01–S18, R01–R10, validated for Demo Stage),
@@ -252,3 +254,21 @@ docs/ui/
 
 On approval I generate the full `docs/ui/` library (tokens extracted from the live site first).
 `app/` stays locked until Gate 6 sign-off.
+
+---
+
+## Appendix A — Phase 1 outcomes (client answers, 2026-10-28; append-only)
+
+1. **Q1 (shell):** LOCKED — **Option C + 4th `💆 Treatments` consumer tab variant**. Shells:
+   ANON `🏠 Home · 💆 Treatments · ✦ Consult · 👤 Sign In`; CLIENT `🏠 Home (client_dashboard()) ·
+   💆 Treatments · ✦ Request · 👤 Profile`; STAFF/OWNER separate workspace `📥 Queue · ☎ Dial ·
+   💆 Care · ⋯ More` + Top Identity Strip (Dial hosts diary+outcomes; Care hosts comms+catalogue
+   edits; More hosts owner items + `[Switch to Client View]`). Spec: `02-navigation-and-ia.md`.
+2. **Q2 (tab counts):** resolved inside Q1 — 4/4 consumer tabs (Treatments kept), 4 admin tabs.
+3. **Q3 (priority + owner surfaces):** J1 + J2 generated in full 5-stage detail
+   (`sections/15-journeys/`); `14-owner-access/` wireframes generated complete and marked
+   **OWNER-TIER / secondary to the core M1 demo slice** in `03-routing-map.md` (rows 40–41).
+
+Phase 2 executed 2026-10-28: full `docs/ui/` tree written (tokens extracted + verified from the
+live `ulc-signature` theme CSS `:root` + homepage SVG, not from the research files — see
+`01-tokens.md` provenance); `app/` remains locked pending Gate 6.
