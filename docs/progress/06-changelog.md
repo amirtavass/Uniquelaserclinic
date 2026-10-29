@@ -80,3 +80,50 @@
   `PROGRESS.md` — changelog history is not rewritten; acknowledged here.
 - **State:** `app/` still locked. STOP — Gate 6 is the client's turn: review `01-tokens.md`, the
   five 3-variant choices, and the `03-routing-map.md` build order; sign off or send edits.
+
+## 2026-10-28 — Session 7: Gate 6 signed → Stage 7 M1 demo build shipped
+- **Gate 6 SIGNED** (client). Stage 7 executed same day under the client presentation-demo
+  directive (high-craft 3 tiers; secondary CRUD = showcase). Register:
+  `docs/progress/milestones/m1-project-setup.md` (T01–T18).
+- **Visuals:** 6 client photos normalised to `assets/clinic/` (bounded re-encodes; Metro-hostile
+  `.jfif` fixed; no `.web` files existed — `.webp` are safe); `theme/visuals.ts` central map
+  (categories/concerns/featured/detail/consult + focus biases); `ClinicImage`/`MediaHeader`
+  enforce 16:10 cards, 16:9/4:3/21:9 banners, cover+bias crop, hairline, gold scrim, skeleton.
+  Deviations registered honestly: `SkinTatooRemoval` was a labelled BEFORE/AFTER composite →
+  bundled neutral right-half crop (results photos remain out of scope); `laserMachine` vs
+  `tattooRemovalMachine` are a mirrored pair; `SkinLaser2.webp` corrupt header → not bundled.
+- **Tokens:** M1 delta applied (statusOpen #7FD69A, noticeText, articleInk, borders.line*,
+  motion eOut/eIO + durations, Cormorant 500 loaded); all values verified against live
+  `ulc-signature` CSS (`01-tokens.md`).
+- **App (3 shells live):** `(consumer)` 4 role-adaptive tabs — guest home (hero/Open-Closed/
+  concern pills/featured/4-step/FAQ/Deane Road card), client dashboard (single
+  `client_dashboard()` + updates strip, ChainStepper, empty-state welcome), Treatments L1 +
+  detail L1 ("Discussed at consultation" fills), ✦ Consult/Request wizard (kinds incl.
+  ADVISE_ME, idempotency-key submit + retry dialog, verbatim R02 ack), appointments +
+  request-only cancel/reschedule, enquiries (real threads + polling), updates feed (+mark-read),
+  consents (write-first), GDPR request screen, profile hub; `(auth)` with collapsible **Demo
+  Presenter quick-login** (Priya/Sam/Ayesha one tap); `admin` workspace guarded by `app.my_role()`
+  + IdentityStrip — Queue L1 with unseen stamps + ☎ tap-to-call, triage detail (verbatim note,
+  audit trail), Confirm→chain scheduler (ADVISE_ME consult-only, DA-06 soft-warn never blocks),
+  Decline/Propose sheets; Dial = audited `search_clients` + today board + real Done/No-show;
+  Care = real replies + publish/unpublish + read-only price/hours showcase; More = seats 2/2 +
+  GDPR queue (owner-signed review/execute) + 1-tap Client View / Sign out.
+- **Seams:** +21 `lib/db.ts` (screens never import supabase), auth reset/resend/OTP-stubs,
+  `providers/AuthProvider.tsx`; `components/` P/C set incl. expo-linear-gradient (added dep) for
+  gold CTAs/scrims.
+- **Demo data:** `services/seed-demo.ts` + `npm run seed:demo` — 6 mock personas
+  (`*.demo@uniquelaser.test`), fixed ids, guarded tables insert-if-missing, confirmations
+  **staff-signed** (respects `force_request_pending`/`block_client_status_edit`, writes genuine
+  audit), idempotent re-run resets relative dates only. Owner queue fixture = Grace (never the
+  J1/J2 personas). Credentials in the seed output + demo doc; mock domain, presentation-only.
+- **Schema hot-fixes (registered in `03-schema-status.md`):** client_dashboard 42803 (ORDER BY in
+  aggregate) fixed; public wrappers `client_dashboard`/new `my_role` made SECURITY DEFINER
+  (42501 schema USAGE) and re-applied via Management API; verify harness now temporarily raises
+  `staff_seat_max` to activeStaff+2 mid-run (persistent demo seats occupy DA-01's cap) and
+  restores **2** at CLEANUP — proven after runs.
+- **Verification (all re-run after final edits):** `tsc --noEmit` EXIT 0 · `expo export
+  --platform android` EXIT 0 (full route graph + assets) · persona smoke (tiers, dashboard
+  counts, draft invisibility to client, queue contents, seats, deletion row) all ✓ ·
+  `npm run verify` **35 PASS / 0 FAIL / 1 WARN (A-04 pre-existing) / 0 BLOCKED** ·
+  `npm run verify:rls` **7 PASS**.
+- **STOP per kickoff:** M1 delivered — no phase-2 features. Demo the slice, collect sign-off.

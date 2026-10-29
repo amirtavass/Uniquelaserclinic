@@ -27,6 +27,14 @@ language sql stable security definer set search_path=public,pg_catalog as
 $$ select exists (select 1 from user_roles ur
                   where ur.user_id = auth.uid() and ur.role = 'owner' and ur.revoked_at is null) $$;
 
+-- M1 (docs/ui/03-routing-map.md row 15): own-role lookup for shell switching. SECURITY DEFINER in
+-- the same pattern as is_staff()/is_owner() because user_roles is owner-read-only under RLS;
+-- returns exactly one text — the caller's OWN active role, defaulting 'client'.
+create or replace function app.my_role() returns text
+language sql stable security definer set search_path=public,pg_catalog as
+$$ select coalesce((select ur.role::text from user_roles ur
+                    where ur.user_id = auth.uid() and ur.revoked_at is null limit 1), 'client') $$;
+
 create or replace function app.tenant_id() returns uuid
 language sql stable security definer set search_path=public,pg_catalog as
 $$ select id from clinics order by created_at limit 1 $$;
@@ -624,15 +632,21 @@ begin
     where id = p_appointment_id and status = 'SCHEDULED';
 end $$;
 
--- One-round-trip dashboard (01 §3), invoker-scoped
+-- One-round-trip dashboard (01 §3), invoker-scoped. M1 smoke (28 Oct) fixed a latent bug: the
+-- original jsonb_agg + ORDER BY + LIMIT raised 42803 (non-grouped column); ordering/limit now
+-- live in an inner subselect — same payload contract, executes cleanly under the persona tokens.
 create or replace function app.client_dashboard() returns jsonb language plpgsql stable as $$
 declare out jsonb;
 begin
   select jsonb_build_object(
-    'upcoming_appointments', coalesce((select jsonb_agg(jsonb_build_object(
-        'id', a.id, 'type', a.type, 'status', a.status, 'scheduled_start', a.scheduled_start))
-      from appointments a where a.client_user_id = auth.uid()
-        and a.status = 'SCHEDULED' and a.scheduled_start >= now() order by a.scheduled_start limit 5), '[]'::jsonb),
+    'upcoming_appointments', coalesce((select jsonb_agg(x.o) from (
+        select jsonb_build_object(
+          'id', a.id, 'type', a.type, 'status', a.status, 'scheduled_start', a.scheduled_start) as o
+        from appointments a
+        where a.client_user_id = auth.uid()
+          and a.status = 'SCHEDULED' and a.scheduled_start >= now()
+        order by a.scheduled_start limit 5
+      ) x), '[]'::jsonb),
     'pending_requests', coalesce((select count(*) from booking_requests b
       where b.client_user_id = auth.uid() and b.status = 'PENDING'), 0),
     'unread_updates', coalesce((select count(*) from updates u
@@ -724,9 +738,16 @@ create or replace function public.request_appointment_change(p_appointment_id uu
 returns void language sql security definer set search_path=public,pg_catalog as
 $$ select app.request_appointment_change(p_appointment_id, p_kind) $$;
 
+-- SECURITY DEFINER wrappers: authenticated/anon lack USAGE on schema app, so plain invoker
+-- wrappers 42501. Bodies stay column-scoped (auth.uid() reads the request JWT GUC regardless of
+-- definer), preserving the invoker-scoped semantics by construction (M1 smoke test 28 Oct).
 create or replace function public.client_dashboard()
-returns jsonb language sql stable as
+returns jsonb language sql stable security definer set search_path=public,pg_catalog as
 $$ select app.client_dashboard() $$;
+
+create or replace function public.my_role() returns text
+language sql stable security definer set search_path=public,pg_catalog as
+$$ select app.my_role() $$;
 
 create or replace function public.apply_deletion(p_request_id uuid)
 returns void language sql security definer set search_path=public,pg_catalog as
@@ -816,6 +837,7 @@ create trigger assert_r06_generic_copy before insert or update on public.notific
 revoke execute on function public.purge_verification_data(text) from public, anon, authenticated;
 grant execute on function public.purge_verification_data(text) to service_role;
 grant execute on function public.search_clients(text) to authenticated, service_role;
+grant execute on function public.my_role() to anon, authenticated, service_role;
 grant execute on function public.request_appointment_change(uuid, text) to authenticated, service_role;
 grant execute on function public.client_dashboard() to anon, authenticated, service_role;
 grant execute on function public.apply_deletion(uuid) to authenticated, service_role;

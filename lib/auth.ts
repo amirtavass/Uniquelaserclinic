@@ -40,6 +40,27 @@ export function onAuthChange(callback: (user: User | null) => void) {
   return () => data.subscription.unsubscribe();
 }
 
+export async function resendVerification() {
+  const { data } = await supabase.auth.getSession();
+  const email = data.session?.user.email;
+  if (!email) return { error: 'No signed-in account' };
+  const { error } = await supabase.auth.resend({ type: 'signup', email });
+  return { error: error ? translateAuthError(error.message) : null };
+}
+
+export async function requestPasswordReset(email: string) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  return { error: error ? translateAuthError(error.message) : null };
+}
+
+// DA-19: phone OTP is simulated locally for the demo (schema unchanged) — real OTP wires here at M1.5.
+export async function requestPhoneOtp(_phoneE164: string): Promise<{ demoCode: string }> {
+  return { demoCode: '246810' };
+}
+export async function confirmPhoneOtp(_code: string): Promise<{ error: string | null }> {
+  return { error: null };
+}
+
 // Duplicate email/phone must surface as the friendly recovery copy from S01, not raw Postgres text.
 function translateAuthError(message: string): string {
   const m = message.toLowerCase();

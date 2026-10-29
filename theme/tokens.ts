@@ -15,10 +15,30 @@ export const colors = {
   white: '#FFFFFF',
   success: '#2E7D5B',
   danger: '#A23B4A',
+  // M1 token delta (docs/ui/01-tokens.md §5) — values VERIFIED from live ulc-signature CSS:
+  statusOpen: '#7FD69A', // site `.status i` open dot + halo
+  noticeText: '#F3E6C4', // announcement-bar text on plum-deep
+  articleInk: '#3B3042', // .ulc-prose body copy
+} as const;
+
+// M1 delta: hairline + motion tokens extracted from the site :root (docs/ui/01-tokens.md §3).
+export const borders = {
+  line: 'rgba(34,23,42,.14)',
+  lineNight: 'rgba(243,240,242,.16)',
+} as const;
+
+export const motion = {
+  // CSS cubic-bezier control points — apply via Animated/Easing.bezier(x1,y1,x2,y2).
+  eOut: [0.16, 1, 0.3, 1],
+  eIO: [0.65, 0, 0.35, 1],
+  fast: 150,
+  base: 200,
+  slow: 250,
 } as const;
 
 export const fonts = {
   display: 'Cormorant_600SemiBold',
+  displayMedium: 'Cormorant_500Medium',
   displayRegular: 'Cormorant_400Regular',
   body: 'InstrumentSans_400Regular',
   bodyMedium: 'InstrumentSans_500Medium',

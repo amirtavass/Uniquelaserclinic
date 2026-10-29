@@ -137,3 +137,13 @@ green: `npm run verify` = **35 PASS · 0 FAIL · 1 WARN (A-04) · 0 BLOCKED**; `
 | Introspection | `storage.buckets.name` corrected (was `bucket_name`); enum-label violations scoped to schema `public` only |
 | RLS idempotency | Added the missing `drop policy if exists enq_select` in `rls.sql` |
 | Harness | `countRows` uses `Prefer: count=exact` (not URL params); preflight prints the real probe error; P-02 selects `phone_e164`; B isolation rows use `ADVISE_ME` (CHECK requires a treatment unless `ADVISE_ME`); P-15 deletes its tomorrow row before/after so repeat runs don't collide |
+
+## M1 smoke fixes (2026-10-28 — persona tokens hit live paths for the first time)
+
+| Date | Story | Status | Evidence | Notes |
+|---|---|---|---|---|
+| 2026-10-28 | S06 dashboard RPC | FIXED | live POST /rpc/client_dashboard as priya → 42803 before, 200 + correct payload after | app.client_dashboard() had latent jsonb_agg + ORDER BY + LIMIT (non-grouped column); it had never executed under a persona token before the M1 smoke — ordering/limit moved into an inner subselect; payload contract unchanged |
+| 2026-10-28 | S06/R07 wrapper grants | FIXED | 42501 "permission denied for schema app" under anon/authenticated before → 200 after | public.client_dashboard()/public.my_role() wrappers made SECURITY DEFINER (same pattern as search_clients); bodies remain auth.uid()-column-scoped; new my_role() wrapper added for 02-navigation role switching (schema.sql re-applied via Management API, HTTP 201) |
+| 2026-10-28 | S18/staffQueue embed | FIXED | PGRST200 (no FK booking_requests→client_profiles) | seam now two-query attachProfiles() in lib/db.ts; RLS unchanged (staff-read on client_profiles proven by verify:rls 7/7) |
+| 2026-10-28 | R01/DA-01 suite interaction | PASS (adapted) | verify re-run 35/0/1W after fix; clinic_settings value = 2 after runs | persistent demo seats occupy the tenant cap → engine A2 raises staff_seat_max to activeStaff+2 for its own run and restores it at CLEANUP; DA-01 shipped cap untouched; P-11 semantics intact |
+| 2026-10-28 | S05 seed posture | PASS | seed:demo second run performs zero status patches | booking_requests confirmations must come from a staff-signed PATCH (force_request_pending + block_client_status_edit) — services/seed-demo.ts signs in as Sam to confirm the fixture request, producing a genuine audit event |

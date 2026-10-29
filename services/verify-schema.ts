@@ -234,6 +234,19 @@ async function engineA2(): Promise<void> {
     return;
   }
   const clinic = await firstClinicId();
+  // Demo-seat accommodation (M1, 28 Oct): persistent demo personas may already hold staff seats
+  // (owner screen shows 2/2). Temporarily raise the tenant cap to activeStaff + 2 so P-11 keeps
+  // its exact "grants 1-2 ok, 3rd rejected" semantics; restored during CLEANUP. DA-01's shipped
+  // cap of 2 is unchanged outside verification runs.
+  {
+    const active = (await rows('user_roles', 'id', 'role=eq.staff&revoked_at=is.null'))?.length ?? 0;
+    const capRow = await rows('clinic_settings', 'id,value', 'key=eq.staff_seat_max');
+    if (capRow?.[0]) {
+      prevSeatCap = capRow[0].value;
+      await rest('PATCH', 'clinic_settings', `id=eq.${capRow[0].id}`, { body: { value: active + 2 } });
+      console.log(`  (harness: staff_seat_max temporarily ${JSON.stringify(prevSeatCap)} → ${active + 2} for this run)`);
+    }
+  }
   // Bootstrap the owner seat (stands in for the one-off deploy step; only service role can, since
   // owner-gating means a brand-new owner has no grants yet).
   await rest('POST', 'user_roles', 'select=id', { body: { clinic_id: clinic, user_id: P.owner.id, role: 'owner', granted_by: P.owner.id } });
@@ -515,14 +528,18 @@ async function engineB(): Promise<void> {
 }
 
 // ---------------------------------------------------------------- cleanup
-
+let prevSeatCap: unknown = null; // set by engineA2 bootstrap, restored after purge
 async function cleanup(): Promise<void> {
   const purge = await rpc('purge_verification_data', { run_id: RUN_ID });
   if (isMissing(purge)) {
     record('CLEANUP', 'WARN', `purge_verification_data missing — run ${RUN_ID} rows (tagged) remain; persona auth users kept for manual cleanup`);
-    return;
+  } else {
+    record('CLEANUP', purge.ok ? 'PASS' : 'FAIL', `purged run ${RUN_ID}` + (purge.ok ? ' (auth users may still need removal if RESTRICT rows remain)' : ' ' + JSON.stringify(purge.err)));
   }
-  record('CLEANUP', purge.ok ? 'PASS' : 'FAIL', `purged run ${RUN_ID}` + (purge.ok ? ' (auth users may still need removal if RESTRICT rows remain)' : ' ' + JSON.stringify(purge.err)));
+  if (prevSeatCap !== null) {
+    const capRow = await rows('clinic_settings', 'id', 'key=eq.staff_seat_max');
+    if (capRow?.[0]) await rest('PATCH', 'clinic_settings', `id=eq.${capRow[0].id}`, { body: { value: prevSeatCap } });
+  }
 }
 
 // ---------------------------------------------------------------- main

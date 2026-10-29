@@ -1,8 +1,8 @@
 import { createContext, useContext, type ReactNode } from 'react';
 
-import { colors, fonts, gradients, radii, spacing, typography } from './tokens';
+import { borders, colors, fonts, gradients, motion, radii, spacing, typography } from './tokens';
 
-const theme = { colors, fonts, gradients, radii, spacing, typography };
+const theme = { borders, colors, fonts, gradients, motion, radii, spacing, typography };
 
 export type Theme = typeof theme;
 

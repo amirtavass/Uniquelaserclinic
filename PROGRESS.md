@@ -1,13 +1,13 @@
 # PROGRESS.md
 
-**Current stage:** Gates 1–3 provisionally signed for demo (DA-01…DA-20) → Stage 4 + 5 complete;
-schema v1 APPLIED + SEEDED (27 Oct). Live suite: **35 PASS · 0 FAIL · 1 WARN (A-04) · 0 BLOCKED**;
-`verify:rls` 7 PASS; `typecheck` clean. **Stage 6 Phase 1 APPROVED + Phase 2 EXECUTED 28 Oct:
-full `docs/ui/` tree written (tokens verified against live site CSS; locked 4-tab consumer +
-4-tab admin shell; U1/U2/C1/C2/F1 ×3 layout variants; J1+J2 5-stage journeys; `14-owner-access`
-wireframed, Owner-tier/secondary). → **GATE 6 AWAITING CLIENT REVIEW**; `app/` screens stay
-locked until cleared.
-**Updated:** 2026-10-28 (session 6).
+**Current stage:** **Gate 6 SIGNED 28 Oct → Stage 7 M1 demo build EXECUTED (same day).**
+Three role shells live (`app/` consumer tabs + admin workspace), clinic photography normalised +
+uniform-framed, token delta applied, demo personas seeded live (`npm run seed:demo`), bundle
+exported green, `verify` **35 PASS · 0 FAIL · 1 WARN (A-04, pre-existing)** and `verify:rls`
+**7 PASS**; `typecheck` EXIT 0. Schema hot-fixes registered
+(`03-schema-status.md` “M1 smoke fixes”). **→ READY: client presentation rehearsal on two phones**
+(EAS dev build path unchanged); Gate 4–6 docs remain the spec of record.
+**Updated:** 2026-10-28 (session 7).
 
 | Milestone | Status | Notes |
 |---|---|---|
@@ -23,16 +23,19 @@ locked until cleared.
 | S02 session storage | FIXED | `expo-secure-store` adapter in `lib/supabase.ts`; seams `lib/auth.ts` + `lib/db.ts` |
 | Register | LIVE (append-only) | `docs/schema-coaching/03-schema-status.md` — Session 3 appended 27 Oct with PASS rows/check IDs; A-04 WARN; policy variants remain BLOCKED |
 | Demo data model blockers | NONE (demo defaults) | Open policy questions parked as DA-## + owner Q##; two advisories: `/book/` dropdown count (0 options in static HTML), homepage "six or eight" copy |
-| UI architecture / screens | **Stage 6 Phase 2 DONE (docs)** — Gate 6 review pending | `docs/ui/` full tree 28 Oct; shell locked (Option C + Treatments tab, 4/4); `app/` locked until sign-off |
+| UI architecture / screens | **M1 BUILT (demo scope)** | `docs/ui/` spec → `app/` 3 shells + components; register `docs/progress/milestones/m1-project-setup.md`; secondary CRUD = showcase per client directive |
 
 ## Next-up (severity order)
 
-1. **Gate 6 review** of `docs/ui/` (client): confirm the 5 × 3-layout locked defaults, token
-   deltas in `01-tokens.md` §5 (statusOpen dot, line/border + easing tokens, PROPOSED `success`/
-   `danger` colours), then M1 build starts at `03-routing-map.md` section C (token delta PR first).
-2. Manual browser confirmation of `/book/` dropdown composition (24 options claim vs 0 in static
+1. **Presentation rehearsal on two phones:** EAS dev builds (`npm run build:dev:android` / iOS
+   equivalent), then walk D-F1…D-F8 from `docs/demo/01-demo-scope.md` with the quick-login card
+   (Priya → Sam confirm → Ayesha seats/GDPR → sign out to guest). Re-run `npm run seed:demo`
+   before the meeting to re-fresh relative dates.
+2. M1.5 upgrades behind owner answers: price/hours edit write forms (Care), typed-intent deletion
+   gate, real SMS OTP + server push (needs keys — never committed).
+3. Manual browser confirmation of `/book/` dropdown composition (24 options claim vs 0 in static
    HTML — logged deviation), then tighten A-04 from WARN.
-3. Owner answers: Q1 seats, Q3 diary truth, Q4 cancellation, Q5 intervals, Q7 health position
-   (`docs/decisions/01-client-questions-for-owner.md`) — UI specs carry none as policy (DA-## only).
-4. Keep the demo DB clean: test personas are purged by `purge_verification_data`; seeded content
-   remains (31 treatments, 7 opening-hours rows, 8 course packages).
+4. Owner answers: Q1 seats, Q3 diary truth, Q4 cancellation, Q5 intervals, Q7 health position
+   (`docs/decisions/01-client-questions-for-owner.md`) — UI carries none as policy (DA-## only).
+5. Asset asks to client: real treatment photography to replace the flagged before/after crop +
+   the mirrored machine shot; logo licence files.

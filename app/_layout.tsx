@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import {
   Cormorant_400Regular,
+  Cormorant_500Medium,
   Cormorant_600SemiBold,
   Cormorant_700Bold,
   useFonts as useCormorant,
@@ -18,6 +19,7 @@ import {
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ThemeProvider } from '../theme/ThemeContext';
+import { AuthProvider } from '../providers/AuthProvider';
 import { colors } from '../theme/tokens';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -25,6 +27,7 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 export default function RootLayout() {
   const [cormorantLoaded] = useCormorant({
     Cormorant_400Regular,
+    Cormorant_500Medium,
     Cormorant_600SemiBold,
     Cormorant_700Bold,
   });
@@ -50,13 +53,15 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <StatusBar style="dark" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.pearl },
-          }}
-        />
+        <AuthProvider>
+          <StatusBar style="light" />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.pearl },
+            }}
+          />
+        </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
